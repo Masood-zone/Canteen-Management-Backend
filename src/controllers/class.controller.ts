@@ -12,7 +12,7 @@ classRouter.get("/", async (req: any, res: any) => {
     const allClasses = await prisma.classes.findMany();
     return res.json({ all: allClasses });
   } catch (error) {
-    return res.json({ error: "user not found" }).status(400);
+    return res.json({ error: "class not found" }).status(400);
   }
 });
 

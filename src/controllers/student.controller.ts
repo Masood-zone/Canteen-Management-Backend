@@ -1,36 +1,37 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
-const dotenv = require("dotenv");
-
-dotenv.config();
 
 const prisma = new PrismaClient();
 const studentRouter = express.Router();
 
-
-// Get All Students Route (Protected)
-studentRouter.get("/students",  async (req:Request, res:Response) => {
-  const students = await prisma.student.findMany();
-  res.json(students);
-});
-
-// Create Student Route (Protected)
-studentRouter.post("/students", async (req:Request, res:Response) => {
-  const { name, age, parentPhone, classId } = req.body;
-
+studentRouter.get("/", async (req: any, res: any) => {
   try {
-    const newStudent = await prisma.student.create({
-      data: {
-        name,
-        age,
-        parentPhone,
-        classId,
-      },
-    });
-    res.status(201).json(newStudent);
+    const result = await prisma.students.findMany()
+    return res.status(200).json({ teachers: result });
   } catch (error) {
-    res.status(400).json({ error: "Error creating student" });
+    console.error("Error fetching teachers:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-module.exports = {studentRouter}
+studentRouter.post("/", async (req: any, res: any) => {
+  const { name, age, phone } = req.body;
+  try {
+    const data = await prisma.students.create({
+      data: {
+        name,
+        age,
+        phone,
+        
+      },
+    });
+    return res
+      .status(200)
+      .json({ status: "user added successfully", data: data });
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+module.exports = { studentRouter };

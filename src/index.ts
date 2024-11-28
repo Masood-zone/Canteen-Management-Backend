@@ -1,17 +1,18 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcrypt"); // For password hashing
-const jwt = require("jsonwebtoken"); // For JWT authentication
+const bcrypt = require("bcrypt"); 
+const jwt = require("jsonwebtoken"); 
 const dotenv = require("dotenv");
 import { Request, Response, NextFunction } from "express";
 dotenv.config();
 const {teacherRouter} = require('./controllers/teahers.controller')
-const prisma = new PrismaClient();
+  const prisma = new PrismaClient();
 const app = express();
 
 app.use(express.json());
 app.use('/teachers', teacherRouter)
-// Middleware to authenticate token
+
+
 function authenticateToken(req:any, res:any, next:NextFunction) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -25,11 +26,9 @@ function authenticateToken(req:any, res:any, next:NextFunction) {
   });
 }
 
-// User Signup Route
 app.post("/signup", async (req:Request, res:Response) => {
   const {  email, password, role } = req.body;
 
-  // Hash the password before saving it
   const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
@@ -46,15 +45,16 @@ app.post("/signup", async (req:Request, res:Response) => {
   }
 });
 
-// User Login Route
-app.post("/login", async (req:Request, res:Response) => {
+app.post("/login", async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   const user = await prisma.user.findUnique({ where: { email } });
+
   if (!user) {
     return res.status(400).json({ error: "Invalid credentials" });
   }
 
+  // Validate password
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     return res.status(400).json({ error: "Invalid credentials" });
@@ -63,20 +63,19 @@ app.post("/login", async (req:Request, res:Response) => {
   // Generate JWT token
   const token = jwt.sign(
     { id: user.id, email: user.email },
-    process.env.TOKEN_SECRET,
-    { expiresIn: "1800s" }
+    process.env.TOKEN_SECRET as string, 
+    { expiresIn: "2d" }
   );
 
-  res.json({ token });
+  const { password: _, ...userWithoutPassword } = user; 
+  res.json({ token, user: userWithoutPassword });
 });
 
-// Get All Classes Route (Protected)
 app.get("/classes", authenticateToken, async (req:Request, res:Response) => {
   const classes = await prisma.class.findMany();
   res.json(classes);
 });
 
-// Create Class Route (Protected)
 app.post("/classes", authenticateToken, async (req:Request, res:Response) => {
   const { name, description, supervisorId } = req.body;
 
@@ -94,13 +93,11 @@ app.post("/classes", authenticateToken, async (req:Request, res:Response) => {
   }
 });
 
-// Get All Students Route (Protected)
 app.get("/students", authenticateToken, async (req:Request, res:Response) => {
   const students = await prisma.student.findMany();
   res.json(students);
 });
 
-// Create Student Route (Protected)
 app.post("/students", authenticateToken, async (req:Request, res:Response) => {
   const { name, age, parentPhone, classId } = req.body;
 
@@ -119,13 +116,13 @@ app.post("/students", authenticateToken, async (req:Request, res:Response) => {
   }
 });
 
-// Get All Records Route (Protected)
+
+
 app.get("/records", authenticateToken, async (req:any, res:any) => {
   const records = await prisma.record.findMany();
   res.json(records);
 });
 
-// Create Record Route (Protected)
 app.post("/records", authenticateToken, async (req:any, res:any) => {
   const { amount, submitedBy } = req.body;
 
