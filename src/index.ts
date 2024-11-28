@@ -13,6 +13,7 @@ const app = express();
 app.use(express.json());
 app.use('/teachers', teacherRouter)
 app.use('/class', classRouter)
+app.use('/student', studentRouter)
 // Middleware to authenticate token
 function authenticateToken(req:any, res:any, next:NextFunction) {
   const authHeader = req.headers["authorization"];
@@ -74,31 +75,6 @@ app.post("/login", async (req:Request, res:Response) => {
 
 
 
-// Get All Students Route (Protected)
-app.get("/students", authenticateToken, async (req:Request, res:Response) => {
-  const students = await prisma.student.findMany();
-  res.json(students);
-});
-
-// Create Student Route (Protected)
-app.post("/students", authenticateToken, async (req:Request, res:Response) => {
-  const { name, age, parentPhone, classId } = req.body;
-
-  try {
-    const newStudent = await prisma.student.create({
-      data: {
-        name,
-        age,
-        parentPhone,
-        classId,
-      },
-    });
-    res.status(201).json(newStudent);
-  } catch (error) {
-    res.status(400).json({ error: "Error creating student" });
-  }
-});
-
 // Get All Records Route (Protected)
 app.get("/records", authenticateToken, async (req:any, res:any) => {
   const records = await prisma.record.findMany();
@@ -122,7 +98,6 @@ app.post("/records", authenticateToken, async (req:any, res:any) => {
   }
 });
 
-// Start the server
 const server = app.listen(3000, () =>
   console.log(`
 🚀 Server ready at: http://localhost:3000
