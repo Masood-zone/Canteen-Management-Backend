@@ -6,9 +6,16 @@ const dotenv = require("dotenv");
 import { Request, Response, NextFunction } from "express";
 dotenv.config();
 const { teacherRouter } = require("./controllers/teahers.controller");
+const cors = require("cors");
 const prisma = new PrismaClient();
 const app = express();
 
+const corsOptions = {
+  origin: "http://localhost:3000",
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/teachers", teacherRouter);
 
@@ -26,7 +33,7 @@ function authenticateToken(req: any, res: any, next: NextFunction) {
 }
 
 app.post("/signup", async (req: Request, res: Response) => {
-  const { email, password, role } = req.body;
+  const { email, password, role, name, phone } = req.body;
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -36,6 +43,8 @@ app.post("/signup", async (req: Request, res: Response) => {
         email,
         password: hashedPassword,
         role,
+        phone,
+        name,
       },
     });
     res.status(201).json(result);
@@ -166,14 +175,14 @@ app.post(
 
     try {
       const student_class = await prisma.class.findUnique({
-        where: {name:class_name}
-      })
+        where: { name: class_name },
+      });
       const newStudent = await prisma.student.create({
         data: {
           name,
           age,
           parentPhone,
-          classId:student_class.id
+          classId: student_class.id,
         },
       });
       res.status(201).json(newStudent);
@@ -203,18 +212,18 @@ app.post("/records", authenticateToken, async (req: any, res: any) => {
         amount,
         submitedBy: submiter.id,
         payedBy: payer.id,
-        isPrepaid
+        isPrepaid,
       },
     });
     res.status(201).json(newRecord);
   } catch (error) {
-    res.status(400).json({ error, "message":"There was an error" });
+    res.status(400).json({ error, message: "There was an error" });
   }
 });
 
 // Start the server
-const server = app.listen(3000, () =>
+const server = app.listen(3400, () =>
   console.log(`
-🚀 Server ready at: http://localhost:3000
+🚀 Server ready at: http://localhost:3400
 ⭐️ See sample requests`)
 );
