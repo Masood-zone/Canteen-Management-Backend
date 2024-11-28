@@ -14,7 +14,7 @@ model User {
   name     String?
   phone    String?
   role     String
-  class    Class?   @relation // Optional relation to Class (if needed)
+  class    Class?   @relation 
   Record   Record[]
 }
 
@@ -43,6 +43,7 @@ model Record {
   submitedAt DateTime @default(now())
   submitedBy Int
   payedBy    Int?
+  isPrepaid  Boolean  @default(false)
   user       User?    @relation(fields: [submitedBy], references: [id])
   student    Student? @relation(fields: [payedBy], references: [id])
 }
