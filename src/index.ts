@@ -3,11 +3,15 @@ const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const cors = require("cors");
+
 import { Request, Response, NextFunction } from "express";
 dotenv.config();
 const { teacherRouter } = require("./controllers/teahers.controller");
 const prisma = new PrismaClient();
 const app = express();
+app.use(cors());
+
 
 app.use(express.json());
 app.use("/teachers", teacherRouter);
@@ -111,19 +115,19 @@ app.put("/classes/:name/assign", async (req: Request, res: any) => {
   }
 });
 
-app.get("/classes/:name", async (req: Request, res: any) => {
-  const class_name = req.params.name;
+app.get("/classes/:id", async (req: Request, res: any) => {
+  const class_id = req.params.name;
 
   // Validate input
-  if (!class_name) {
+  if (!class_id) {
     return res
       .status(400)
-      .json({ message: "Class name and teacher email are required." });
+      .json({ message: "Class id is not required but it's not provided" });
   }
 
   try {
     const current_class = await prisma.class.findUnique({
-      where: { name: class_name },
+      where: { id: class_id },
     });
     if (!current_class) {
       return res.json({ message: "class not found" }).status(400);
@@ -157,6 +161,27 @@ app.get("/students", authenticateToken, async (req: Request, res: Response) => {
   const students = await prisma.student.findMany();
   res.json(students);
 });
+
+app.get("/students/:id/records",authenticateToken,  async (req:Request, res:Response)=> {
+  const student_id = req.params?.id 
+  try {
+    const records_data = await prisma.records.findMany({
+      where: { payedBy : student_id},
+    });
+    return res.json({"data":records_data}).status(200)
+  } catch (error) {
+    return res.json(error).status(400)
+  }
+})
+
+app.get("/students/:id", authenticateToken, async (req: Request, res: Response) => {
+  const id = req.params.id
+  const students = await prisma.student.findUnique({
+    where: {id:id}
+  })
+  res.json(students);
+});
+
 
 app.post(
   "/students",
