@@ -19,10 +19,13 @@ teacherRouter.get("/", async (req:any, res:any) => {
 
 
 teacherRouter.post("/", async (req: any, res: any) => {
-    const {email, name}  = req.body()
+    const {email, name, phone}  = req.body
   try {
     const data = await prisma.user.create({data:{
-
+      email,
+      name,
+      phone,
+      role:"Teacher"
     }})
     return res.status(200).json({ 'status':'user added successfully', data:data });
   } catch (error) {
