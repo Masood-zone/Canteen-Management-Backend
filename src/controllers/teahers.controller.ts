@@ -135,4 +135,29 @@ teacherRouter.put("/:id", async (req: any, res: any) => {
   }
 });
 
+// Delete a teacher
+teacherRouter.delete("/:id", async (req: any, res: any) => {
+  const id = parseInt(req.params.id, 10); // Ensure id is an integer
+  if (isNaN(id)) {
+    return res.status(400).json({ message: "Invalid teacher ID" });
+  }
+
+  try {
+    const deletedTeacher = await prisma.user.delete({
+      where: { id },
+    });
+
+    if (!deletedTeacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    return res.json({
+      status: "Teacher deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting teacher:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 module.exports = { teacherRouter };

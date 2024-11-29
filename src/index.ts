@@ -331,22 +331,6 @@ app.delete(
 );
 
 app.delete(
-  "/teachers/:id",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    try {
-      await prisma.user.delete({
-        where: { id: parseInt(id) },
-      });
-      res.status(204).send();
-    } catch (error) {
-      res.status(400).json({ error: `Error deleting teacher: ${error}` });
-    }
-  }
-);
-
-app.delete(
   "/records/:id",
   authenticateToken,
   async (req: Request, res: Response) => {
