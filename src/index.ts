@@ -3,7 +3,6 @@ const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
-const cors = require("cors");
 
 import { Request, Response, NextFunction } from "express";
 dotenv.config();
@@ -12,7 +11,6 @@ const cors = require("cors");
 const prisma = new PrismaClient();
 const app = express();
 app.use(cors());
-
 
 const corsOptions = {
   origin: "http://localhost:3000",
@@ -125,18 +123,18 @@ app.put("/classes/:name/assign", async (req: Request, res: any) => {
 });
 
 app.get("/classes/:id", async (req: Request, res: any) => {
-  const class_id = req.params.name;
+  const class_id = req.params.id;
 
   // Validate input
   if (!class_id) {
     return res
       .status(400)
-      .json({ message: "Class id is not required but it's not provided" });
+      .json({ message: "Class id is required but it's not provided" });
   }
 
   try {
     const current_class = await prisma.class.findUnique({
-      where: { id: class_id },
+      where: { id: Number(class_id) },
     });
     if (!current_class) {
       return res.json({ message: "class not found" }).status(400);
@@ -165,54 +163,107 @@ app.post("/classes", authenticateToken, async (req: Request, res: Response) => {
     res.status(400).json({ error: "Error creating class" });
   }
 });
+app.put(
+  "/classes/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const { name, description, supervisorId } = req.body;
+
+    try {
+      const updatedClass = await prisma.class.update({
+        where: {
+          id: parseInt(id),
+        },
+        data: {
+          name,
+          description,
+          supervisorId,
+        },
+      });
+      res.json(updatedClass);
+    } catch (error) {
+      res.status(400).json({ error: `Error updating class ${error}` });
+    }
+  }
+);
 
 app.get("/students", authenticateToken, async (req: Request, res: Response) => {
   const students = await prisma.student.findMany();
   res.json(students);
 });
 
-app.get("/students/:id/records",authenticateToken,  async (req:Request, res:Response)=> {
-  const student_id = req.params?.id 
-  try {
-    const records_data = await prisma.records.findMany({
-      where: { payedBy : student_id},
-    });
-    return res.json({"data":records_data}).status(200)
-  } catch (error) {
-    return res.json(error).status(400)
+app.get(
+  "/students/:id/records",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const student_id = req.params?.id;
+    try {
+      const records_data = await prisma.records.findMany({
+        where: { payedBy: student_id },
+      });
+      return res.json({ data: records_data }).status(200);
+    } catch (error) {
+      return res.json(error).status(400);
+    }
   }
-})
+);
 
-app.get("/students/:id", authenticateToken, async (req: Request, res: Response) => {
-  const id = req.params.id
-  const students = await prisma.student.findUnique({
-    where: {id:id}
-  })
-  res.json(students);
-});
+app.get(
+  "/students/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const students = await prisma.student.findUnique({
+      where: { id: parseInt(id) },
+    });
+    res.json(students);
+  }
+);
 
+app.put(
+  "/students/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const { name, age, parentPhone, classId, gender } = req.body;
+    try {
+      const updatedStudent = await prisma.student.update({
+        where: { id: parseInt(id) },
+        data: {
+          name,
+          age,
+          parentPhone,
+          classId,
+          gender,
+        },
+      });
+      res.json(updatedStudent);
+    } catch (error) {
+      res.status(400).json({ error: `Error updating student ${error}` });
+    }
+  }
+);
 
 app.post(
   "/students",
   authenticateToken,
   async (req: Request, res: Response) => {
-    const { name, age, parentPhone, class_name } = req.body;
+    const { name, age, parentPhone, classId, gender } = req.body;
 
     try {
-      const student_class = await prisma.class.findUnique({
-        where: { name: class_name },
-      });
       const newStudent = await prisma.student.create({
         data: {
           name,
           age,
           parentPhone,
-          classId: student_class.id,
+          classId,
+          gender,
         },
       });
       res.status(201).json(newStudent);
     } catch (error) {
-      res.status(400).json({ error: "Error creating student" });
+      res.status(400).json({ error: `Error creating student: ${error}` });
     }
   }
 );
@@ -245,6 +296,71 @@ app.post("/records", authenticateToken, async (req: any, res: any) => {
     res.status(400).json({ error, message: "There was an error" });
   }
 });
+
+// Delete enpoints requests - students, classes, teachers and records
+app.delete(
+  "/students/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+      await prisma.student.delete({
+        where: { id: parseInt(id) },
+      });
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ error: `Error deleting student: ${error}` });
+    }
+  }
+);
+
+app.delete(
+  "/classes/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+      await prisma.class.delete({
+        where: { id: parseInt(id) },
+      });
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ error: `Error deleting class: ${error}` });
+    }
+  }
+);
+
+app.delete(
+  "/teachers/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+      await prisma.user.delete({
+        where: { id: parseInt(id) },
+      });
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ error: `Error deleting teacher: ${error}` });
+    }
+  }
+);
+
+app.delete(
+  "/records/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+      await prisma.record.delete({
+        where: { id: parseInt(id) },
+      });
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ error: `Error deleting record: ${error}` });
+    }
+  }
+);
 
 // Start the server
 const server = app.listen(3400, () =>
