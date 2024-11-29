@@ -15,7 +15,7 @@ model User {
   phone    String?
   role     String
   gender  String?
-  class    Class?   @relation 
+  assigned_class    Class?   @relation 
   Record   Record[]
 }
 

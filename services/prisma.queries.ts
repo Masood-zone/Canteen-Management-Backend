@@ -11,7 +11,7 @@ export async function getAllTeachers() {
       email: true,
       phone: true,
       gender: true,
-      class: true,
+      assigned_class: true,
     },
     where: { role: "Teacher" },
   });

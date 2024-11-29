@@ -104,7 +104,7 @@ teacherRouter.post("/", async (req: any, res: any) => {
 // Update a teacher
 teacherRouter.put("/:id", async (req: any, res: any) => {
   const id = parseInt(req.params.id, 10); // Ensure id is an integer
-  const { email, name, phone, gender, password } = req.body;
+  const { email, name, phone, gender, password, assigned_class } = req.body;
   if (isNaN(id)) {
     return res.status(400).json({ message: "Invalid teacher ID" });
   }
@@ -118,6 +118,11 @@ teacherRouter.put("/:id", async (req: any, res: any) => {
         ...(phone && { phone }),
         ...(gender && { gender }),
         ...(password && { password }),
+        ...(assigned_class && {
+          assigned_class: {
+            connect: { id: assigned_class.id }, // Connect the class by ID
+          },
+        }),
       },
     });
 
