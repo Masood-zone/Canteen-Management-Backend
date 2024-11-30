@@ -45,10 +45,18 @@ app.post("/signup", async (req: Request, res: Response) => {
   const { email, password, role, name, phone } = req.body;
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const toSave = {email:email, password:hashedPassword, role:role, name:name, phone:phone}
+  const toSave = {
+    email: email,
+    password: hashedPassword,
+    role: role,
+    name: name,
+    phone: phone,
+  };
   try {
-    const result = await createUser(toSave)
-    res.status(201).json({message:"user created successfully", data:result});
+    const result = await createUser(toSave);
+    res
+      .status(201)
+      .json({ message: "user created successfully", data: result });
   } catch (error) {
     res.status(400).json({ error: "User already exists or invalid data" });
   }
@@ -124,7 +132,7 @@ app.put("/classes/:name/assign", async (req: Request, res: any) => {
 app.get("/classes/:id/supervisor", async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   try {
-    const data = await getClassBySupervisorId(id)
+    const data = await getClassBySupervisorId(id);
     return res.json({ supervisor: data });
   } catch (err) {
     return res.json({ err }).status(500);
@@ -207,8 +215,6 @@ app.get("/settings/amount", async (req: any, res: any) => {
 app.post("/settings/amount", async (req: any, res: any) => {
   const { amount } = req.body;
 
-  // Convert amount to number if it's a string
-
   // Check if conversion was successful
   if (isNaN(amount)) {
     return res.status(400).json({ error: "Invalid amount: must be a number" });
@@ -259,7 +265,7 @@ app.post(
   }
 );
 
-app.get("/records",authenticateToken,  async (req: any, res: any) => {
+app.get("/records", authenticateToken, async (req: any, res: any) => {
   const records = await prisma.record.findMany();
   res.json(records);
 });
