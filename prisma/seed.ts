@@ -41,8 +41,7 @@ async function main() {
     prisma.class.create({
       data: {
         name: "JS1",
-        description:
-          "This is the js1 class",
+        description: "This is the js1 class",
         supervisorId: users[0].id, // Ama Owusu as supervisor
       },
     }),
@@ -63,21 +62,27 @@ async function main() {
       data: {
         name: "Kofi Mensah",
         age: 20,
-        classId: classes[0].id, // Enroll Kofi in Mathematics
+        classId: classes[0].id,
+        parentPhone: "0239483021",
+        gender: "male",
       },
     }),
     prisma.student.create({
       data: {
         name: "Akua Serwah",
         age: 22,
-        classId: classes[1].id, // Enroll Akua in History
+        classId: classes[1].id,
+        parentPhone: "0259483043",
+        gender: "female",
       },
     }),
     prisma.student.create({
       data: {
         name: "Yaw Boateng",
         age: 19,
-        classId: classes[0].id, // Enroll Yaw in Mathematics
+        classId: classes[0].id,
+        parentPhone: "02984830302",
+        gender: "male",
       },
     }),
   ]);

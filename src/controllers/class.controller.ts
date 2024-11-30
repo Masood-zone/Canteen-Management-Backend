@@ -1,6 +1,6 @@
-const express = require("express");
-const { PrismaClient } = require("@prisma/client");
-const dotenv = require("dotenv");
+import express from "express";
+import { PrismaClient } from "@prisma/client";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -9,7 +9,7 @@ const classRouter = express.Router();
 
 classRouter.get("/", async (req: any, res: any) => {
   try {
-    const allClasses = await prisma.classes.findMany();
+    const allClasses = await prisma.class.findMany();
     return res.json({ all: allClasses });
   } catch (error) {
     return res.json({ error: "class not found" }).status(400);
@@ -33,5 +33,40 @@ classRouter.post("/", async (req: any, res: any) => {
   }
 });
 
+classRouter.get("/:id", async (req: any, res: any) => {
+  const { id } = req.params;
 
-module.exports  = {classRouter}
+  try {
+    const classById = await prisma.class.findUnique({
+      where: {
+        id: parseInt(id),
+      },
+    });
+    res.json(classById);
+  } catch (error) {
+    res.status(400).json({ error: "Class not found" });
+  }
+});
+
+classRouter.put("/:id", async (req: any, res: any) => {
+  const { id } = req.params;
+  const { name, description, supervisorId } = req.body;
+
+  try {
+    const updatedClass = await prisma.class.update({
+      where: {
+        id: parseInt(id),
+      },
+      data: {
+        name,
+        description,
+        supervisorId,
+      },
+    });
+    res.json(updatedClass);
+  } catch (error) {
+    res.status(400).json({ error: "Error updating class" });
+  }
+});
+
+module.exports = { classRouter };

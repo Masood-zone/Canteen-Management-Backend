@@ -1,6 +1,6 @@
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 import { createUserInterface } from "../src/types/user.interface";
-
-const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
@@ -11,12 +11,30 @@ export async function getAllTeachers() {
       name: true,
       role: true,
       email: true,
+      phone: true,
+      gender: true,
+      assigned_class: true,
     },
     where: { role: "Teacher" },
   });
   return data;
 }
 
+export const updateUser = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const { name, email, phone, gender } = req.body;
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: Number(id) },
+      data: { name, email, phone, gender },
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: "User update failed" });
+  }
+};
 export async function submitPrepaid(
   set_amount: number,
   amount: number,
@@ -45,9 +63,9 @@ export async function submitPrepaid(
     const record = await prisma.record.create({
       data: {
         amount: amount,
-        submittedBy: submitedBy,
+        submitedBy: submitedBy,
         payedBy: payedBy,
-        submittedAt: submissionDate, // Use incremented date
+        submitedAt: submissionDate, // Use incremented date
         isPrepaid: true,
       },
     });
@@ -68,7 +86,7 @@ export async function createAmount(amount: any) {
   return amount_update;
 }
 
-export async function updateAmount(amount: String) {
+export async function updateAmount(amount: string) {
   const amount_update = await prisma.settings.create({
     data: {
       id: 1,
@@ -108,35 +126,31 @@ export async function getClassBySupervisorId(id: number) {
       },
     });
 
-   const supervisor = await prisma.user.findUnique({
-     select: {
-       id: true, 
-       email: true, 
-       name: true,
-       password: false, 
-     },
-     where: {
-       id: data.id, 
-     },
-   });
+    const supervisor = await prisma.user.findUnique({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        password: false,
+      },
+      where: {
+        id: data?.id,
+      },
+    });
 
-
-    return supervisor
+    return supervisor;
   } catch (error) {
-    throw new Error("Faild to retrieve data")
+    throw new Error("Faild to retrieve data");
   }
 }
 
-export async function createUser(data:createUserInterface) {
-
+export async function createUser(data: createUserInterface) {
   try {
     const result_data = await prisma.user.create({
-      data:data
-    })
-    return result_data
-  } catch (error) {
-    
-  }
+      data: data,
+    });
+    return result_data;
+  } catch (error) {}
 }
 
 export async function createClass(data: createUserInterface) {
