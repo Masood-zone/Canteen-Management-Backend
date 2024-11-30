@@ -6,6 +6,7 @@ const dotenv = require("dotenv");
 
 import { Request, Response, NextFunction } from "express";
 dotenv.config();
+import userRouter from "./controllers/users.controller";
 const { teacherRouter } = require("./controllers/teahers.controller");
 const cors = require("cors");
 const prisma = new PrismaClient();
@@ -20,6 +21,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/teachers", teacherRouter);
+app.use("/users", userRouter);
 
 function authenticateToken(req: any, res: any, next: NextFunction) {
   const authHeader = req.headers["authorization"];
