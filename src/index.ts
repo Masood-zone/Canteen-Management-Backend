@@ -6,13 +6,18 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 
 import { Request, Response, NextFunction } from "express";
+import {
+  createAmount,
+  createUser,
+  getAmount,
+  getClassBySupervisorId,
+  submitPrepaid,
+} from "../services/prisma.queries";
 dotenv.config();
 const { teacherRouter } = require("./controllers/teahers.controller");
-const cors = require("cors");
 const prisma = new PrismaClient();
 const app = express();
 app.use(cors());
-
 
 const corsOptions = {
   origin: "http://localhost:3000",
@@ -30,7 +35,7 @@ function authenticateToken(req: any, res: any, next: NextFunction) {
   if (!token) return res.sendStatus(401); // No token provided
 
   jwt.verify(token, process.env.TOKEN_SECRET, (err: any, user: any) => {
-    if (err) return res.sendStatus(403); // Invalid token
+    if (err) return res.sendStatus(401); // Invalid token
     req.user = user; // Save user info for use in other routes
     next();
   });
@@ -40,18 +45,10 @@ app.post("/signup", async (req: Request, res: Response) => {
   const { email, password, role, name, phone } = req.body;
 
   const hashedPassword = await bcrypt.hash(password, 10);
-
+  const toSave = {email:email, password:hashedPassword, role:role, name:name, phone:phone}
   try {
-    const result = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        role,
-        phone,
-        name,
-      },
-    });
-    res.status(201).json(result);
+    const result = await createUser(toSave)
+    res.status(201).json({message:"user created successfully", data:result});
   } catch (error) {
     res.status(400).json({ error: "User already exists or invalid data" });
   }
@@ -124,6 +121,16 @@ app.put("/classes/:name/assign", async (req: Request, res: any) => {
   }
 });
 
+app.get("/classes/:id/supervisor", async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  try {
+    const data = await getClassBySupervisorId(id)
+    return res.json({ supervisor: data });
+  } catch (err) {
+    return res.json({ err }).status(500);
+  }
+});
+
 app.get("/classes/:id", async (req: Request, res: any) => {
   const class_id = req.params.name;
 
@@ -171,26 +178,61 @@ app.get("/students", authenticateToken, async (req: Request, res: Response) => {
   res.json(students);
 });
 
-app.get("/students/:id/records",authenticateToken,  async (req:Request, res:Response)=> {
-  const student_id = req.params?.id 
-  try {
-    const records_data = await prisma.records.findMany({
-      where: { payedBy : student_id},
-    });
-    return res.json({"data":records_data}).status(200)
-  } catch (error) {
-    return res.json(error).status(400)
+app.get(
+  "/students/:id/records",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const student_id = req.params?.id;
+    try {
+      const records_data = await prisma.records.findMany({
+        where: { payedBy: student_id },
+      });
+      return res.json({ data: records_data }).status(200);
+    } catch (error) {
+      return res.json(error).status(400);
+    }
   }
-})
+);
 
-app.get("/students/:id", authenticateToken, async (req: Request, res: Response) => {
-  const id = req.params.id
-  const students = await prisma.student.findUnique({
-    where: {id:id}
-  })
-  res.json(students);
+app.get("/settings/amount", async (req: any, res: any) => {
+  try {
+    const data = await getAmount();
+    return res.status(200).json({ data: data }); // Set status before sending JSON
+  } catch (err) {
+    console.error("Error fetching amount:", err); // Log the error for debugging
+    return res.status(400).json({ err }); // Send a user-friendly error message
+  }
 });
 
+app.post("/settings/amount", async (req: any, res: any) => {
+  const { amount } = req.body;
+
+  // Convert amount to number if it's a string
+
+  // Check if conversion was successful
+  if (isNaN(amount)) {
+    return res.status(400).json({ error: "Invalid amount: must be a number" });
+  }
+
+  try {
+    const data = await createAmount(amount);
+    return res.status(200).json({ data: data }); // Correct order of response methods
+  } catch (err) {
+    return res.status(400).json(err);
+  }
+});
+
+app.get(
+  "/students/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const students = await prisma.student.findUnique({
+      where: { id: id },
+    });
+    res.json(students);
+  }
+);
 
 app.post(
   "/students",
@@ -217,7 +259,7 @@ app.post(
   }
 );
 
-app.get("/records", authenticateToken, async (req: any, res: any) => {
+app.get("/records",authenticateToken,  async (req: any, res: any) => {
   const records = await prisma.record.findMany();
   res.json(records);
 });
@@ -247,8 +289,8 @@ app.post("/records", authenticateToken, async (req: any, res: any) => {
 });
 
 // Start the server
-const server = app.listen(3400, () =>
+const server = app.listen(3000, () =>
   console.log(`
-🚀 Server ready at: http://localhost:3400
+🚀 Server ready at: http://localhost:3000
 ⭐️ See sample requests`)
 );
