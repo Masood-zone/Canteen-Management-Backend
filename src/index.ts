@@ -11,11 +11,13 @@ import {
   getAmount,
   getClassBySupervisorId,
   submitPrepaid,
+  updateAmount,
 } from "../services/prisma.queries";
 dotenv.config();
 
 import userRouter from "./controllers/users.controller";
 const { teacherRouter } = require("./controllers/teahers.controller");
+const { studentRouter } = require("./controllers/student.controller");
 import cors from "cors";
 const prisma = new PrismaClient();
 const app = express();
@@ -29,8 +31,9 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/teachers", teacherRouter);
 app.use("/users", userRouter);
+app.use("/students", studentRouter);
 
-function authenticateToken(req: any, res: any, next: NextFunction) {
+export function authenticateToken(req: any, res: any, next: NextFunction) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -70,7 +73,7 @@ app.post("/login", async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
-    return res.status(400).json({ error: "Invalid credentials" });
+    return res.status(400).json({ error: "User not found!" });
   }
 
   // Validate password
@@ -86,8 +89,13 @@ app.post("/login", async (req: Request, res: Response) => {
     { expiresIn: "2d" }
   );
 
+  // Fetch assigned class
+  const assignedClass = await prisma.class.findFirst({
+    where: { supervisorId: user.id },
+  });
+
   const { password: _, ...userWithoutPassword } = user;
-  res.json({ token, user: userWithoutPassword });
+  res.json({ token, user: userWithoutPassword, assigned_class: assignedClass });
 });
 
 app.get("/classes", authenticateToken, async (req: Request, res: Response) => {
@@ -207,39 +215,7 @@ app.put(
   }
 );
 
-app.get("/students", authenticateToken, async (req: Request, res: Response) => {
-  const students = await prisma.student.findMany();
-  res.json(students);
-});
-
-app.get(
-  "/students/:id/records",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const student_id = req.params?.id;
-    try {
-      const records_data = await prisma.records.findMany({
-        where: { payedBy: student_id },
-      });
-      return res.json({ data: records_data }).status(200);
-    } catch (error) {
-      return res.json(error).status(400);
-    }
-  }
-);
-
-app.get(
-  "/students/:id",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    const students = await prisma.student.findUnique({
-      where: { id: parseInt(id) },
-    });
-    res.json(students);
-  }
-);
-
+// Settings
 app.get("/settings/amount", async (req: any, res: any) => {
   try {
     const data = await getAmount();
@@ -251,9 +227,9 @@ app.get("/settings/amount", async (req: any, res: any) => {
 });
 
 app.post("/settings/amount", async (req: any, res: any) => {
-  const { amount } = req.body;
-
-  // Check if conversion was successful
+  const { value } = req.body;
+  const amount = parseFloat(value);
+  // Check if conversion was unsuccessful
   if (isNaN(amount)) {
     return res.status(400).json({ error: "Invalid amount: must be a number" });
   }
@@ -261,6 +237,21 @@ app.post("/settings/amount", async (req: any, res: any) => {
   try {
     const data = await createAmount(amount);
     return res.status(200).json({ data: data }); // Correct order of response methods
+  } catch (err) {
+    return res.status(400).json(err);
+  }
+});
+
+app.put("/settings/amount", async (req: any, res: any) => {
+  const { amount } = req.body;
+  // Check if conversion was unsuccessful
+  if (isNaN(amount)) {
+    return res.status(400).json({ error: "Invalid amount: must be a number" });
+  }
+
+  try {
+    const data = await updateAmount(amount);
+    return res.status(200).json({ data: data });
   } catch (err) {
     return res.status(400).json(err);
   }
@@ -342,23 +333,7 @@ app.post("/records", authenticateToken, async (req: any, res: any) => {
   }
 });
 
-// Delete enpoints requests - students, classes, teachers and records
-app.delete(
-  "/students/:id",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    try {
-      await prisma.student.delete({
-        where: { id: parseInt(id) },
-      });
-      res.status(204).send();
-    } catch (error) {
-      res.status(400).json({ error: `Error deleting student: ${error}` });
-    }
-  }
-);
-
+// Delete enpoints requests - classes, teachers and records
 app.delete(
   "/classes/:id",
   authenticateToken,
@@ -391,9 +366,24 @@ app.delete(
   }
 );
 
+app.delete(
+  "/teachers/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+      await prisma.user.delete({
+        where: { id: parseInt(id) },
+      });
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ error: `Error deleting teacher: ${error}` });
+    }
+  }
+);
 // Start the server
-const server = app.listen(3000, () =>
+const server = app.listen(3400, () =>
   console.log(`
-🚀 Server ready at: http://localhost:3000
+🚀 Server ready at: http://localhost:3400
 ⭐️ See sample requests`)
 );

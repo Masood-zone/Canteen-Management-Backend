@@ -17,6 +17,7 @@ model User {
   gender  String?
   assigned_class    Class?   @relation 
   Record   Record[]
+  students  Student?
 }
 
 model Settings {
@@ -43,6 +44,7 @@ model Student {
   gender     String?
   class       Class?   @relation(fields: [classId], references: [id])
   Record      Record[]
+  teacher        User?    @relation(fields: [id], references: [id])
 }
 
 model Record {

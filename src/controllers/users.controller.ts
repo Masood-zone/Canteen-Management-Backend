@@ -1,21 +1,61 @@
-import { updateUser } from "../../services/prisma.queries";
-const express = require("express");
+import { authenticateToken } from "..";
 
+const express = require("express");
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
 const userRouter = express.Router();
 
-userRouter.put("/update", async (req: any, res: any) => {
+// Get all users
+userRouter.get("/", authenticateToken, async (req: any, res: any) => {
   try {
-    const { id, userData } = req.body;
+    const result = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password: true, // Don't return password - test
+        phone: true,
+        role: true,
+        assigned_class: true,
+      },
+    });
+    return res.status(200).json({ users: result });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
-    const result = await updateUser(id, userData);
+// Update a user
+userRouter.put("/update/:id", authenticateToken, async (req: any, res: any) => {
+  const { id } = req.params;
+  const { name, email, phone, gender } = req.body;
 
-    return res.status(200).json({
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: { name, email, phone, gender },
+    });
+    const { password, ...userWithoutPassword } = updatedUser;
+    res.json({
       message: "User updated successfully",
-      user: result,
+      data: userWithoutPassword,
     });
   } catch (error) {
-    console.error("Error updating user:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ error: `User update failed ${error}` });
+  }
+});
+
+// Delete a user
+userRouter.delete("/:id", authenticateToken, async (req: any, res: any) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.user.delete({ where: { id: parseInt(id) } });
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: `User deletion failed ${error}` });
   }
 });
 

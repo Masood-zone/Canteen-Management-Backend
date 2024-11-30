@@ -89,7 +89,7 @@ teacherRouter.post("/", async (req: any, res: any) => {
         email,
         name,
         phone,
-        role: "Teacher",
+        role: "TEACHER",
         gender,
         password,
       },

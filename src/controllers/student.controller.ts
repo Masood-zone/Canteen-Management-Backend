@@ -1,10 +1,12 @@
 const express = require("express");
 import { PrismaClient } from "@prisma/client";
+import { authenticateToken } from "..";
 
 const prisma = new PrismaClient();
 const studentRouter = express.Router();
 
-studentRouter.get("/", async (req: any, res: any) => {
+// Get all students
+studentRouter.get("/", authenticateToken, async (req: any, res: any) => {
   try {
     const result = await prisma.student.findMany();
     return res.status(200).json({ students: result });
@@ -13,8 +15,27 @@ studentRouter.get("/", async (req: any, res: any) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
-studentRouter.post("/", async (req: any, res: any) => {
+// Get students in a class
+studentRouter.get(
+  "/class/:id",
+  authenticateToken,
+  async (req: any, res: any) => {
+    const classId = req.params.id;
+    try {
+      const result = await prisma.student.findMany({
+        where: { classId: parseInt(classId) },
+      });
+      return res.status(200).json({ students: result });
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      return res
+        .status(500)
+        .json({ message: `Internal Server Error ${error}` });
+    }
+  }
+);
+// Add a student
+studentRouter.post("/", authenticateToken, async (req: any, res: any) => {
   const { name, age, parentPhone, classId, gender } = req.body;
   try {
     const data = await prisma.student.create({
@@ -34,34 +55,38 @@ studentRouter.post("/", async (req: any, res: any) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
-studentRouter.get("/:id", async (req: any, res: any) => {
+// Get a student
+studentRouter.get("/:id", authenticateToken, async (req: any, res: any) => {
   const id = req.params.id;
   try {
     const result = await prisma.student.findUnique({
-      where: { id: id },
+      where: { id: parseInt(id) },
     });
     return res.status(200).json({ student: result });
   } catch (error) {
     console.error("Error fetching students:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: `Internal Server Error ${error}` });
   }
 });
-
-studentRouter.get("/:id/records", async (req: any, res: any) => {
-  const student_id = req.params.id;
-  try {
-    const result = await prisma.record.findMany({
-      where: { payedBy: student_id },
-    });
-    return res.status(200).json({ records: result });
-  } catch (error) {
-    console.error("Error fetching students:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+// Get a student's records
+studentRouter.get(
+  "/:id/records",
+  authenticateToken,
+  async (req: any, res: any) => {
+    const student_id = req.params.id;
+    try {
+      const result = await prisma.record.findMany({
+        where: { payedBy: student_id },
+      });
+      return res.status(200).json({ records: result });
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
   }
-});
-
-studentRouter.put("/:id", async (req: any, res: any) => {
+);
+// Update a student
+studentRouter.put("/:id", authenticateToken, async (req: any, res: any) => {
   const id = req.params.id;
   const { name, age, parentPhone, classId, gender } = req.body;
   try {
@@ -80,6 +105,21 @@ studentRouter.put("/:id", async (req: any, res: any) => {
       .json({ status: "Student updated successfully", data: data });
   } catch (error) {
     console.error("Error updating student:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+// Delete a student
+studentRouter.delete("/:id", authenticateToken, async (req: any, res: any) => {
+  const id = req.params.id;
+  try {
+    const data = await prisma.student.delete({
+      where: { id: parseInt(id) },
+    });
+    return res
+      .status(200)
+      .json({ status: "Student deleted successfully", data: data });
+  } catch (error) {
+    console.error("Error deleting student:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
