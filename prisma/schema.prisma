@@ -47,15 +47,21 @@ model Student {
 }
 
 model Record {
-  id         Int      @id @unique @default(autoincrement())
-  amount     Int
-  submitedAt DateTime @default(now())
-  submitedBy Int
-  payedBy    Int?
-  isPrepaid  Boolean  @default(false)
-  hasPaid    Boolean  @default(false)
-  teacher    User     @relation(fields: [submitedBy], references: [id])
-  student    Student? @relation(fields: [payedBy], references: [id])
-  classId    Int?     
-  class      Class?   @relation(fields: [classId], references: [id])
+  id             Int      @id @default(autoincrement())
+  amount         Int
+  submitedAt     DateTime @default(now())
+  submitedBy     Int
+  payedBy        Int?
+  isPrepaid      Boolean  @default(false)
+  hasPaid        Boolean  @default(false)
+  isAbsent       Boolean  @default(false)
+  settingsAmount Int
+  teacher        User     @relation(fields: [submitedBy], references: [id])
+  student        Student? @relation(fields: [payedBy], references: [id])
+  classId        Int?     
+  class          Class?   @relation(fields: [classId], references: [id])
+
+  @@index([submitedBy])
+  @@index([payedBy])
+  @@index([classId])
 }

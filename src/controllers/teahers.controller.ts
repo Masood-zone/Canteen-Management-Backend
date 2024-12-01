@@ -149,44 +149,44 @@ export const teacherController = {
     }
   },
 
-  submitPrepaid: async (req: Request, res: Response) => {
-    const { set_amount, amount, payedBy, submitedBy, classId } = req.body;
-    if (set_amount <= 0 || amount <= 0) {
-      return res
-        .status(400)
-        .json({ message: "Amounts must be greater than 0" });
-    }
-    try {
-      const numberOfRecords = Math.floor(set_amount / amount);
-      const currentDate = new Date();
-      const records = [];
+  // submitPrepaid: async (req: Request, res: Response) => {
+  //   const { set_amount, amount, payedBy, submitedBy, classId } = req.body;
+  //   if (set_amount <= 0 || amount <= 0) {
+  //     return res
+  //       .status(400)
+  //       .json({ message: "Amounts must be greater than 0" });
+  //   }
+  //   try {
+  //     const numberOfRecords = Math.floor(set_amount / amount);
+  //     const currentDate = new Date();
+  //     const records = [];
 
-      for (let i = 0; i < numberOfRecords; i++) {
-        const submissionDate = new Date(currentDate);
-        submissionDate.setDate(currentDate.getDate() + i);
+  //     for (let i = 0; i < numberOfRecords; i++) {
+  //       const submissionDate = new Date(currentDate);
+  //       submissionDate.setDate(currentDate.getDate() + i);
 
-        const record = await prisma.record.create({
-          data: {
-            amount: amount,
-            submitedBy: submitedBy,
-            payedBy: payedBy,
-            submitedAt: submissionDate,
-            isPrepaid: true,
-            hasPaid: true,
-            classId: classId,
-          },
-        });
-        records.push(record);
-      }
-      res.status(201).json({
-        status: "Prepaid records created successfully",
-        data: records,
-      });
-    } catch (error) {
-      console.error("Error submitting prepaid records:", error);
-      res.status(500).json({ message: "Internal Server Error" });
-    }
-  },
+  //       const record = await prisma.record.create({
+  //         data: {
+  //           amount: amount,
+  //           submitedBy: submitedBy,
+  //           payedBy: payedBy,
+  //           submitedAt: submissionDate,
+  //           isPrepaid: true,
+  //           hasPaid: true,
+  //           classId: classId,
+  //         },
+  //       });
+  //       records.push(record);
+  //     }
+  //     res.status(201).json({
+  //       status: "Prepaid records created successfully",
+  //       data: records,
+  //     });
+  //   } catch (error) {
+  //     console.error("Error submitting prepaid records:", error);
+  //     res.status(500).json({ message: "Internal Server Error" });
+  //   }
+  // },
 
   getClassBySupervisorId: async (req: Request, res: Response) => {
     const id = parseInt(req.params.id, 10);

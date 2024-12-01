@@ -30,20 +30,17 @@ export const studentController = {
       res.status(500).json({ error: "Error fetching student" });
     }
   },
-
-  getByClassId: async (req: Request, res: Response) => {
-    const { className } = req.params;
-    console.log("Nothing to return yet.");
-
-    // try {
-    //   const students = await prisma.student.findMany({
-    //     // where: { className: className },
-    //     // include: { class: true },
-    //   });
-    //   res.json(students);
-    // } catch (error) {
-    //   res.status(500).json({ error: "Error fetching students" });
-    // }
+  // Get students by class ID
+  getClassById: async (req: Request, res: Response) => {
+    const { classId } = req.params;
+    try {
+      const students = await prisma.student.findMany({
+        where: { classId: parseInt(classId) },
+      });
+      res.json(students);
+    } catch (error) {
+      res.status(500).json({ error: "Error fetching students by class ID" });
+    }
   },
 
   create: async (req: Request, res: Response) => {

@@ -75,7 +75,7 @@ app.get("/students/:id", authenticateToken, studentController.getById);
 app.get(
   "/students/class/:classId",
   authenticateToken,
-  studentController.getByClassId
+  studentController.getClassById
 );
 app.post("/students", authenticateToken, async (req, res, next) => {
   try {
@@ -98,7 +98,6 @@ app.get("/records/:classId", authenticateToken, async (req, res, next) => {
 app.post("/records", authenticateToken, recordController.submitStudentRecord);
 app.put("/records/:id", authenticateToken, recordController.update);
 app.delete("/records/:id", authenticateToken, recordController.delete);
-
 // Settings routes
 app.get("/settings/amount", authenticateToken, settingsController.getAmount);
 app.post("/settings/amount", authenticateToken, (req, res, next) => {
@@ -137,13 +136,13 @@ app.delete("/teachers/:id", authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
-app.post("/teachers/prepaid", authenticateToken, async (req, res, next) => {
-  try {
-    await teacherController.submitPrepaid(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
+// app.post("/teachers/prepaid", authenticateToken, async (req, res, next) => {
+//   try {
+//     await teacherController.submitPrepaid(req, res);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 app.get("/teachers/:id/class", authenticateToken, async (req, res, next) => {
   try {
     await teacherController.getClassBySupervisorId(req, res);
