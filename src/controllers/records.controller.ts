@@ -105,6 +105,7 @@ export const recordController = {
     }
   },
 
+  //* When a student's record is submitted, it should be kept in the paid students array*/
   submitStudentRecord: async (req: Request, res: Response) => {
     const {
       amount,
@@ -134,8 +135,21 @@ export const recordController = {
           isAbsent: Boolean(isAbsent),
           settingsAmount,
         },
+        include: { student: true },
       });
-      res.status(201).json(record);
+
+      if (record.hasPaid) {
+        const paidStudents = await prisma.record.findMany({
+          where: {
+            classId: parseInt(classId),
+            hasPaid: true,
+          },
+          include: { student: true },
+        });
+        res.status(201).json({ record, paidStudents });
+      } else {
+        res.status(201).json(record);
+      }
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2003") {
@@ -150,6 +164,85 @@ export const recordController = {
         console.error("Error submitting student record:", error);
         res.status(500).json({ error: "Internal Server Error" });
       }
+    }
+  },
+
+  submitTeacherRecord: async (req: Request, res: Response) => {
+    const { classId, date, records } = req.body;
+
+    if (!classId || !date || !Array.isArray(records)) {
+      return res.status(400).json({ error: "Invalid input data" });
+    }
+
+    const settings = await prisma.settings.findFirst({
+      where: { name: "amount" },
+    });
+
+    const settingsAmount = settings ? parseInt(settings.value) : 0;
+
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date" });
+    }
+
+    try {
+      const startOfDay = new Date(parsedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(parsedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existingRecords = await prisma.record.findMany({
+        where: {
+          classId,
+          submitedAt: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+        },
+      });
+
+      const recordMap = new Map(
+        existingRecords.map((record) => [record.payedBy, record])
+      );
+
+      const updatedRecords = await Promise.all(
+        records.map(async (record) => {
+          const { payedBy, amount, hasPaid, isPrepaid, isAbsent } = record;
+          const existingRecord = recordMap.get(payedBy);
+
+          if (existingRecord) {
+            return prisma.record.update({
+              where: { id: existingRecord.id },
+              data: {
+                amount: parseInt(amount),
+                hasPaid: Boolean(hasPaid),
+                isPrepaid: Boolean(isPrepaid),
+                isAbsent: Boolean(isAbsent),
+              },
+            });
+          } else {
+            return prisma.record.create({
+              data: {
+                classId: parseInt(classId),
+                payedBy: parseInt(payedBy),
+                submitedAt: startOfDay,
+                amount: parseInt(amount),
+                hasPaid: Boolean(hasPaid),
+                isPrepaid: Boolean(isPrepaid),
+                isAbsent: Boolean(isAbsent),
+                submitedBy: parseInt(classId), // Assuming the class ID can be used as a placeholder for the teacher
+                settingsAmount,
+              },
+            });
+          }
+        })
+      );
+
+      res.status(201).json(updatedRecords);
+    } catch (error) {
+      console.error("Error submitting teacher record:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   },
 
