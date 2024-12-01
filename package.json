@@ -14,8 +14,10 @@
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "22.9.3",
     "prisma": "5.22.0",
     "ts-node": "10.9.2",

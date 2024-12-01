@@ -1,125 +1,102 @@
-const express = require("express");
 import { PrismaClient } from "@prisma/client";
-import { authenticateToken } from "..";
+import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
-const studentRouter = express.Router();
 
-// Get all students
-studentRouter.get("/", authenticateToken, async (req: any, res: any) => {
-  try {
-    const result = await prisma.student.findMany();
-    return res.status(200).json({ students: result });
-  } catch (error) {
-    console.error("Error fetching students:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-});
-// Get students in a class
-studentRouter.get(
-  "/class/:id",
-  authenticateToken,
-  async (req: any, res: any) => {
-    const classId = req.params.id;
+export const studentController = {
+  // GetAll
+  getAll: async (req: Request, res: Response) => {
     try {
-      const result = await prisma.student.findMany({
-        where: { classId: parseInt(classId) },
-      });
-      return res.status(200).json({ students: result });
+      const students = await prisma.student.findMany();
+      res.json(students);
     } catch (error) {
-      console.error("Error fetching students:", error);
-      return res
-        .status(500)
-        .json({ message: `Internal Server Error ${error}` });
+      res.status(500).json({ error: "Error fetching students" });
     }
-  }
-);
-// Add a student
-studentRouter.post("/", authenticateToken, async (req: any, res: any) => {
-  const { name, age, parentPhone, gender, classId } = req.body;
-  try {
-    const data = await prisma.student.create({
-      data: {
-        name,
-        age,
-        parentPhone,
-        classId,
-        gender,
-      },
-    });
-    return res.status(200).json({ status: "Student added successfully", data });
-  } catch (error) {
-    console.error("Error fetching students:", error);
-    return res.status(500).json({ message: `Internal Server Error ${error}` });
-  }
-});
-// Get a student
-studentRouter.get("/:id", authenticateToken, async (req: any, res: any) => {
-  const id = req.params.id;
-  try {
-    const result = await prisma.student.findUnique({
-      where: { id: parseInt(id) },
-    });
-    return res.status(200).json({ student: result });
-  } catch (error) {
-    console.error("Error fetching students:", error);
-    return res.status(500).json({ message: `Internal Server Error ${error}` });
-  }
-});
-// Get a student's records
-studentRouter.get(
-  "/:id/records",
-  authenticateToken,
-  async (req: any, res: any) => {
-    const student_id = req.params.id;
+  },
+  getById: async (req: Request, res: Response) => {
+    const { id } = req.params;
     try {
-      const result = await prisma.record.findMany({
-        where: { payedBy: student_id },
+      const student = await prisma.student.findUnique({
+        where: { id: parseInt(id) },
       });
-      return res.status(200).json({ records: result });
+      if (student) {
+        res.json(student);
+      } else {
+        res.status(404).json({ error: "Student not found" });
+      }
     } catch (error) {
-      console.error("Error fetching students:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
+      res.status(500).json({ error: "Error fetching student" });
     }
-  }
-);
-// Update a student
-studentRouter.put("/:id", authenticateToken, async (req: any, res: any) => {
-  const id = req.params.id;
-  const { name, age, parentPhone, classId, gender } = req.body;
-  try {
-    const data = await prisma.student.update({
-      where: { id: parseInt(id) },
-      data: {
-        ...(name && { name }),
-        ...(age && { age }),
-        ...(parentPhone && { parentPhone }),
-        ...(classId && { classId }),
-        ...(gender && { gender }),
-      },
-    });
-    return res
-      .status(200)
-      .json({ status: "Student updated successfully", data: data });
-  } catch (error) {
-    console.error("Error updating student:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-});
-// Delete a student
-studentRouter.delete("/:id", authenticateToken, async (req: any, res: any) => {
-  const id = req.params.id;
-  try {
-    const data = await prisma.student.delete({
-      where: { id: parseInt(id) },
-    });
-    return res
-      .status(200)
-      .json({ status: "Student deleted successfully", data: data });
-  } catch (error) {
-    console.error("Error deleting student:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-});
+  },
 
-module.exports = { studentRouter };
+  getByClassId: async (req: Request, res: Response) => {
+    const { className } = req.params;
+    try {
+      const students = await prisma.student.findMany({
+        where: { className: className },
+        // include: { class: true },
+      });
+      res.json(students);
+    } catch (error) {
+      res.status(500).json({ error: "Error fetching students" });
+    }
+  },
+
+  create: async (req: Request, res: Response) => {
+    const { name, age, parentPhone, gender, className } = req.body;
+
+    // Check if className exists
+    const classExists = await prisma.class.findUnique({
+      where: { name: className },
+    });
+    if (!classExists) {
+      return res.status(400).json({ error: "Class does not exist" });
+    }
+
+    try {
+      const newStudent = await prisma.student.create({
+        data: {
+          name,
+          age: parseInt(age),
+          parentPhone,
+          className,
+          gender,
+        },
+      });
+      res.status(201).json(newStudent);
+    } catch (error) {
+      res.status(400).json({ error: `Error creating student ${error}` });
+    }
+  },
+
+  update: async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { name, age, parentPhone, gender } = req.body;
+    try {
+      const updatedStudent = await prisma.student.update({
+        where: { id: parseInt(id) },
+        data: {
+          name,
+          age: parseInt(age),
+          parentPhone,
+          gender,
+        },
+      });
+      res.json(updatedStudent);
+    } catch (error) {
+      res.status(400).json({ error: "Error updating student" });
+    }
+  },
+
+  delete: async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+      await prisma.student.delete({
+        where: { id: parseInt(id) },
+      });
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ error: "Error deleting student" });
+    }
+  },
+};

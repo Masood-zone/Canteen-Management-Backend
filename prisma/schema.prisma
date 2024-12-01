@@ -33,7 +33,6 @@ model Class {
   supervisorId Int?      @unique // Each class can have one unique supervisor
   records Record[]
   supervisor   User?     @relation(fields: [supervisorId], references: [id])
-  students     Student[]
 }
 
 model Student {
@@ -41,8 +40,7 @@ model Student {
   name        String
   age         Int
   parentPhone String?
-  classId     Int?
-  class       Class?   @relation(fields: [classId], references: [id])
+  className     String?
   gender     String?
   Record      Record[]
   teacher        User?    @relation(fields: [id], references: [id])
