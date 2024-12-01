@@ -24,7 +24,8 @@ export async function submitPrepaid(
   set_amount: number,
   amount: number,
   payedBy: number,
-  submitedBy: number
+  submitedBy: number,
+  classId: number
 ) {
   // Validate inputs
   if (set_amount <= 0 || amount <= 0) {
@@ -52,6 +53,8 @@ export async function submitPrepaid(
         payedBy: payedBy,
         submitedAt: submissionDate, // Use incremented date
         isPrepaid: true,
+        hasPaid: true,
+        classId: classId,
       },
     });
 

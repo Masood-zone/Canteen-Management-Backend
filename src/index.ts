@@ -19,6 +19,11 @@ import userRouter from "./controllers/users.controller";
 const { teacherRouter } = require("./controllers/teahers.controller");
 const { studentRouter } = require("./controllers/student.controller");
 import cors from "cors";
+import {
+  getPresetAmount,
+  getRecordsByClass,
+  submitStudentRecord,
+} from "./controllers/records.controller";
 const prisma = new PrismaClient();
 const app = express();
 
@@ -48,6 +53,10 @@ export function authenticateToken(req: any, res: any, next: NextFunction) {
 
 app.post("/signup", async (req: Request, res: Response) => {
   const { email, password, role, name, phone } = req.body;
+
+  if (!email || !password || !role || !name || !phone) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const toSave = {
@@ -215,7 +224,7 @@ app.put(
   }
 );
 
-// Settings
+// Settings endpoints
 app.get("/settings/amount", async (req: any, res: any) => {
   try {
     const data = await getAmount();
@@ -257,80 +266,44 @@ app.put("/settings/amount", async (req: any, res: any) => {
   }
 });
 
+// Records endpoints
+
+// Get all records for a class on a specific date
 app.get(
-  "/students/:id",
+  "/records/:classId",
   authenticateToken,
   async (req: Request, res: Response) => {
-    const id = req.params.id;
-    const { name, age, parentPhone, classId, gender } = req.body;
+    const classId = parseInt(req.params.classId);
+    const date = new Date(req.query.date as string);
+
+    if (isNaN(classId) || isNaN(date.getTime())) {
+      return res.status(400).json({ error: "Invalid classId or date" });
+    }
+
     try {
-      const updatedStudent = await prisma.student.update({
-        where: { id: parseInt(id) },
-        data: {
-          name,
-          age,
-          parentPhone,
-          classId,
-          gender,
-        },
-      });
-      res.json(updatedStudent);
+      const records = await getRecordsByClass(classId, date);
+      res.status(200).json(records);
     } catch (error) {
-      res.status(400).json({ error: `Error updating student ${error}` });
+      console.error("Error fetching records:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   }
 );
-
-app.post(
-  "/students",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const { name, age, parentPhone, classId, gender } = req.body;
-
-    try {
-      const newStudent = await prisma.student.create({
-        data: {
-          name,
-          age,
-          parentPhone,
-          classId,
-          gender,
-        },
-      });
-      res.status(201).json(newStudent);
-    } catch (error) {
-      res.status(400).json({ error: `Error creating student: ${error}` });
-    }
+// Submit student record endpoint
+app.post("/records", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const record = await submitStudentRecord(req.body);
+    res.status(201).json(record);
+  } catch (error) {
+    console.error("Error submitting student record:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-);
-
-app.get("/records", authenticateToken, async (req: any, res: any) => {
-  const records = await prisma.record.findMany();
-  res.json(records);
 });
 
-app.post("/records", authenticateToken, async (req: any, res: any) => {
-  const { amount, submiter_email, student_name, isPrepaid } = req.body;
-
-  try {
-    const payer = await prisma.student.findUnique({
-      where: { name: student_name },
-    });
-    const submiter = await prisma.user.findUnique({
-      where: { email: submiter_email },
-    });
-    const newRecord = await prisma.record.create({
-      data: {
-        amount,
-        submitedBy: submiter.id,
-        payedBy: payer.id,
-        isPrepaid,
-      },
-    });
-    res.status(201).json(newRecord);
-  } catch (error) {
-    res.status(400).json({ error, message: "There was an error" });
-  }
+//Canteen amount endpoint
+app.get("/preset-amount", async (req: any, res: any) => {
+  const amount = await getPresetAmount();
+  res.json({ amount });
 });
 
 // Delete enpoints requests - classes, teachers and records

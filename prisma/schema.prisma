@@ -31,8 +31,9 @@ model Class {
   name         String    @unique // Ensure class names are unique
   description  String?
   supervisorId Int?      @unique // Each class can have one unique supervisor
+  records Record[]
   supervisor   User?     @relation(fields: [supervisorId], references: [id])
-  students     Student[] // One-to-many relationship with Student
+  students     Student[]
 }
 
 model Student {
@@ -40,9 +41,9 @@ model Student {
   name        String
   age         Int
   parentPhone String?
-  classId     Int?
-  gender     String?
+  classId     Int
   class       Class?   @relation(fields: [classId], references: [id])
+  gender     String?
   Record      Record[]
   teacher        User?    @relation(fields: [id], references: [id])
 }
@@ -54,6 +55,9 @@ model Record {
   submitedBy Int
   payedBy    Int?
   isPrepaid  Boolean  @default(false)
-  user       User?    @relation(fields: [submitedBy], references: [id])
+  hasPaid    Boolean  @default(false)
+  teacher    User     @relation(fields: [submitedBy], references: [id])
   student    Student? @relation(fields: [payedBy], references: [id])
+  classId    Int?     
+  class      Class?   @relation(fields: [classId], references: [id])
 }

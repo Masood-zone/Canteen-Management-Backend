@@ -38,6 +38,16 @@ studentRouter.get(
 studentRouter.post("/", authenticateToken, async (req: any, res: any) => {
   const { name, age, parentPhone, classId, gender } = req.body;
   try {
+    // Ensure classId exists in the Class table
+    const classExists = await prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!classExists) {
+      return res
+        .status(400)
+        .json({ message: "Invalid classId. Class does not exist." });
+    }
     const data = await prisma.student.create({
       data: {
         name,
@@ -47,12 +57,10 @@ studentRouter.post("/", authenticateToken, async (req: any, res: any) => {
         gender,
       },
     });
-    return res
-      .status(200)
-      .json({ status: "Student added successfully", data: data });
+    return res.status(200).json({ status: "Student added successfully", data });
   } catch (error) {
     console.error("Error fetching students:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: `Internal Server Error ${error}` });
   }
 });
 // Get a student
