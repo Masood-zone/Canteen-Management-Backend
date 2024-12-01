@@ -36,18 +36,8 @@ studentRouter.get(
 );
 // Add a student
 studentRouter.post("/", authenticateToken, async (req: any, res: any) => {
-  const { name, age, parentPhone, classId, gender } = req.body;
+  const { name, age, parentPhone, gender, classId } = req.body;
   try {
-    // Ensure classId exists in the Class table
-    const classExists = await prisma.class.findUnique({
-      where: { id: classId },
-    });
-
-    if (!classExists) {
-      return res
-        .status(400)
-        .json({ message: "Invalid classId. Class does not exist." });
-    }
     const data = await prisma.student.create({
       data: {
         name,

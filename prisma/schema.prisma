@@ -41,7 +41,7 @@ model Student {
   name        String
   age         Int
   parentPhone String?
-  classId     Int
+  classId     Int?
   class       Class?   @relation(fields: [classId], references: [id])
   gender     String?
   Record      Record[]

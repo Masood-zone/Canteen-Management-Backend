@@ -2,10 +2,18 @@
 CREATE TABLE "User" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
+    "password" TEXT,
+    "name" TEXT,
     "phone" TEXT,
-    "role" TEXT NOT NULL
+    "role" TEXT NOT NULL,
+    "gender" TEXT
+);
+
+-- CreateTable
+CREATE TABLE "Settings" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
+    "value" TEXT NOT NULL
 );
 
 -- CreateTable
@@ -22,8 +30,11 @@ CREATE TABLE "Student" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
     "age" INTEGER NOT NULL,
+    "parentPhone" TEXT,
     "classId" INTEGER,
-    CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "gender" TEXT,
+    CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Student_id_fkey" FOREIGN KEY ("id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -32,7 +43,13 @@ CREATE TABLE "Record" (
     "amount" INTEGER NOT NULL,
     "submitedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "submitedBy" INTEGER NOT NULL,
-    CONSTRAINT "Record_submitedBy_fkey" FOREIGN KEY ("submitedBy") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "payedBy" INTEGER,
+    "isPrepaid" BOOLEAN NOT NULL DEFAULT false,
+    "hasPaid" BOOLEAN NOT NULL DEFAULT false,
+    "classId" INTEGER,
+    CONSTRAINT "Record_submitedBy_fkey" FOREIGN KEY ("submitedBy") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Record_payedBy_fkey" FOREIGN KEY ("payedBy") REFERENCES "Student" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Record_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateIndex

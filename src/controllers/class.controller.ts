@@ -41,9 +41,9 @@ classRouter.get("/:id", async (req: any, res: any) => {
       where: {
         id: parseInt(id),
       },
-      select: {
-        students: true,
-      },
+      // select: {
+      //   students: true,
+      // },
     });
     res.json(classById);
   } catch (error) {
