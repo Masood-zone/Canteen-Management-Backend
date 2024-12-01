@@ -44,30 +44,30 @@ function authenticateToken(req: any, res: any, next: Function) {
 
 // User routes
 app.post("/signup", (req, res, next) => {
-  userController.signup(req, res).catch(next);
+  userController.signup(req, res).catch(next); //Works
 });
 app.post("/login", (req, res, next) => {
-  userController.login(req, res).catch(next);
+  userController.login(req, res).catch(next); //Works
 });
-app.get("/users", authenticateToken, userController.getAll);
-app.get("/users/:id", authenticateToken, userController.getById);
-app.put("/users/:id", authenticateToken, userController.update);
-app.delete("/users/:id", authenticateToken, userController.delete);
+app.get("/users", authenticateToken, userController.getAll); //works
+app.get("/users/:id", authenticateToken, userController.getById); //works
+app.put("/users/:id", authenticateToken, userController.update); //works
+app.delete("/users/:id", authenticateToken, userController.delete); //works
 
 // Class routes
-app.get("/classes", authenticateToken, classController.getAll);
-app.get("/classes/:id", authenticateToken, classController.getById);
-app.post("/classes", authenticateToken, classController.create);
-app.put("/classes/:id", authenticateToken, classController.update);
-app.delete("/classes/:id", authenticateToken, classController.delete);
+app.get("/classes", authenticateToken, classController.getAll); //works
+app.get("/classes/:id", authenticateToken, classController.getById); //works
+app.post("/classes", authenticateToken, classController.create); //works
+app.put("/classes/:id", authenticateToken, classController.update); //works
+app.delete("/classes/:id", authenticateToken, classController.delete); //works
 app.put("/classes/:name/assign", authenticateToken, (req, res, next) => {
   classController.assignTeacher(req, res).catch(next);
-});
+}); //Not used
 app.get(
   "/classes/:id/supervisor",
   authenticateToken,
   classController.getClassBySupervisorId
-);
+); //works
 
 // Student routes
 app.get("/students", authenticateToken, studentController.getAll);
@@ -155,5 +155,5 @@ app.get("/teachers/:id/class", authenticateToken, async (req, res, next) => {
 const PORT = process.env.PORT || 3400;
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port http://localhost:${PORT}`);
 });

@@ -1,9 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `classId` on the `Student` table. All the data in the column will be lost.
-
-*/
 -- RedefineTables
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
@@ -12,9 +6,9 @@ CREATE TABLE "new_Student" (
     "name" TEXT NOT NULL,
     "age" INTEGER NOT NULL,
     "parentPhone" TEXT,
-    "className" TEXT,
     "gender" TEXT,
-    CONSTRAINT "Student_id_fkey" FOREIGN KEY ("id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "classId" INTEGER,
+    CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 INSERT INTO "new_Student" ("age", "gender", "id", "name", "parentPhone") SELECT "age", "gender", "id", "name", "parentPhone" FROM "Student";
 DROP TABLE "Student";

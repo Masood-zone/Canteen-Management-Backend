@@ -7,7 +7,9 @@ export const studentController = {
   // GetAll
   getAll: async (req: Request, res: Response) => {
     try {
-      const students = await prisma.student.findMany();
+      const students = await prisma.student.findMany({
+        include: { class: true },
+      });
       res.json(students);
     } catch (error) {
       res.status(500).json({ error: "Error fetching students" });
@@ -31,40 +33,35 @@ export const studentController = {
 
   getByClassId: async (req: Request, res: Response) => {
     const { className } = req.params;
-    try {
-      const students = await prisma.student.findMany({
-        where: { className: className },
-        // include: { class: true },
-      });
-      res.json(students);
-    } catch (error) {
-      res.status(500).json({ error: "Error fetching students" });
-    }
+    console.log("Nothing to return yet.");
+
+    // try {
+    //   const students = await prisma.student.findMany({
+    //     // where: { className: className },
+    //     // include: { class: true },
+    //   });
+    //   res.json(students);
+    // } catch (error) {
+    //   res.status(500).json({ error: "Error fetching students" });
+    // }
   },
 
   create: async (req: Request, res: Response) => {
-    const { name, age, parentPhone, gender, className } = req.body;
-
-    // Check if className exists
-    const classExists = await prisma.class.findUnique({
-      where: { name: className },
-    });
-    if (!classExists) {
-      return res.status(400).json({ error: "Class does not exist" });
-    }
-
+    const { name, age, parentPhone, gender, classId } = req.body;
     try {
       const newStudent = await prisma.student.create({
         data: {
           name,
           age: parseInt(age),
           parentPhone,
-          className,
           gender,
+          classId,
         },
       });
       res.status(201).json(newStudent);
     } catch (error) {
+      console.log(error);
+
       res.status(400).json({ error: `Error creating student ${error}` });
     }
   },

@@ -31,9 +31,8 @@ CREATE TABLE "Student" (
     "name" TEXT NOT NULL,
     "age" INTEGER NOT NULL,
     "parentPhone" TEXT,
-    "classId" INTEGER,
+    "className" TEXT,
     "gender" TEXT,
-    CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT "Student_id_fkey" FOREIGN KEY ("id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 

@@ -40,8 +40,8 @@ export const settingsController = {
   },
 
   updateAmount: async (req: Request, res: Response) => {
-    const { amount } = req.body;
-
+    const { value } = req.body;
+    const amount = parseFloat(value);
     if (isNaN(amount)) {
       return res
         .status(400)

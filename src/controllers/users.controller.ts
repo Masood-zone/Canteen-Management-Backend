@@ -7,9 +7,9 @@ const prisma = new PrismaClient();
 
 export const userController = {
   signup: async (req: Request, res: Response) => {
-    const { email, password, role, name, phone } = req.body;
+    const { email, password, role, name, phone, gender } = req.body;
 
-    if (!email || !password || !role || !name || !phone) {
+    if (!email || !password || !role || !name || !phone || !gender) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -23,6 +23,7 @@ export const userController = {
           role,
           name,
           phone,
+          gender,
         },
       });
 
