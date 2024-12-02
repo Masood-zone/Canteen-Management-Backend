@@ -11,6 +11,7 @@ import { studentController } from "./controllers/student.controller";
 import { settingsController } from "./controllers/settings.controller";
 import teacherController from "./controllers/teahers.controller";
 import { setupDailyRecordCreation } from "../services/daily-records.cron";
+import { analyticsController } from "./controllers/analytics.controller";
 
 dotenv.config();
 
@@ -184,13 +185,6 @@ app.delete("/teachers/:id", authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
-// app.post("/teachers/prepaid", authenticateToken, async (req, res, next) => {
-//   try {
-//     await teacherController.submitPrepaid(req, res);
-//   } catch (error) {
-//     next(error);
-//   }
-// });
 app.get("/teachers/:id/class", authenticateToken, async (req, res, next) => {
   try {
     await teacherController.getClassBySupervisorId(req, res);
@@ -198,6 +192,20 @@ app.get("/teachers/:id/class", authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
+
+// Analytics routes
+// Teachers analytics
+app.get(
+  "/analytics/teachers/:classId",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await analyticsController.getTeacherAnalytics(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 const PORT = process.env.PORT || 3400;
 // Setup daily cron job

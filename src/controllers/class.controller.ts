@@ -18,7 +18,7 @@ export const classController = {
     try {
       const class_ = await prisma.class.findUnique({
         where: { id: parseInt(id) },
-        include: { supervisor: true },
+        include: { supervisor: true, students: true },
       });
       if (class_) {
         res.json(class_);
