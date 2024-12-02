@@ -15,7 +15,6 @@ import { analyticsController } from "./controllers/analytics.controller";
 
 dotenv.config();
 
-// const prisma = new PrismaClient();
 const app = express();
 
 const corsOptions = {
@@ -157,13 +156,37 @@ app.put("/settings/amount", authenticateToken, (req, res, next) => {
 });
 
 // Teacher routes
-app.get("/teachers", authenticateToken, teacherController.getAllTeachers);
-app.get("/teachers/:id", authenticateToken, (req, res, next) => {
-  teacherController.getTeacherById(req, res).catch(next);
+app.get("/teachers", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getAllTeachers(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/teachers/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getTeacherById(req, res);
+  } catch (error) {
+    next(error);
+  }
 });
 app.get("/teachers/:id/records", authenticateToken, async (req, res, next) => {
   try {
     await teacherController.getTeacherRecords(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/teachers/summary", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getTeachersWithRecordsSummary(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/teachers/detail", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getTeacherRecordsDetail(req, res);
   } catch (error) {
     next(error);
   }
@@ -175,8 +198,12 @@ app.post("/teachers", authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
-app.put("/teachers/:id", authenticateToken, (req, res, next) => {
-  teacherController.updateTeacher(req, res).catch(next);
+app.put("/teachers/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.updateTeacher(req, res);
+  } catch (error) {
+    next(error);
+  }
 });
 app.delete("/teachers/:id", authenticateToken, async (req, res, next) => {
   try {
