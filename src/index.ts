@@ -10,6 +10,7 @@ import { userController } from "./controllers/users.controller";
 import { studentController } from "./controllers/student.controller";
 import { settingsController } from "./controllers/settings.controller";
 import teacherController from "./controllers/teahers.controller";
+import { setupDailyRecordCreation } from "../services/daily-records.cron";
 
 dotenv.config();
 
@@ -88,6 +89,11 @@ app.put("/students/:id", authenticateToken, studentController.update);
 app.delete("/students/:id", authenticateToken, studentController.delete);
 
 // Record routes
+app.post(
+  "/records/generate-daily",
+  authenticateToken,
+  recordController.generateDailyRecords
+);
 app.get("/records/:classId", authenticateToken, async (req, res, next) => {
   try {
     await recordController.getByClassAndDate(req, res);
@@ -95,9 +101,51 @@ app.get("/records/:classId", authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
-app.post("/records", authenticateToken, recordController.submitStudentRecord);
 app.put("/records/:id", authenticateToken, recordController.update);
 app.delete("/records/:id", authenticateToken, recordController.delete);
+// Get unpaid students
+app.get(
+  "/records/:classId/unpaid",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await recordController.getUnpaidStudents(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Get paid students
+app.get("/records/:classId/paid", authenticateToken, async (req, res, next) => {
+  try {
+    await recordController.getPaidStudents(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get absent students
+app.get(
+  "/records/:classId/absent",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await recordController.getAbsentStudents(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Update student status
+app.put("/records/:id/status", authenticateToken, async (req, res, next) => {
+  try {
+    await recordController.updateStudentStatus(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
 // Settings routes
 app.get("/settings/amount", authenticateToken, settingsController.getAmount);
 app.post("/settings/amount", authenticateToken, (req, res, next) => {
@@ -152,6 +200,8 @@ app.get("/teachers/:id/class", authenticateToken, async (req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3400;
+// Setup daily cron job
+setupDailyRecordCreation();
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port http://localhost:${PORT}`);

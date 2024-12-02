@@ -31,9 +31,9 @@ CREATE TABLE "Student" (
     "name" TEXT NOT NULL,
     "age" INTEGER NOT NULL,
     "parentPhone" TEXT,
-    "className" TEXT,
     "gender" TEXT,
-    CONSTRAINT "Student_id_fkey" FOREIGN KEY ("id") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "classId" INTEGER,
+    CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -45,6 +45,8 @@ CREATE TABLE "Record" (
     "payedBy" INTEGER,
     "isPrepaid" BOOLEAN NOT NULL DEFAULT false,
     "hasPaid" BOOLEAN NOT NULL DEFAULT false,
+    "isAbsent" BOOLEAN NOT NULL DEFAULT false,
+    "settingsAmount" INTEGER NOT NULL,
     "classId" INTEGER,
     CONSTRAINT "Record_submitedBy_fkey" FOREIGN KEY ("submitedBy") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "Record_payedBy_fkey" FOREIGN KEY ("payedBy") REFERENCES "Student" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
@@ -61,4 +63,13 @@ CREATE UNIQUE INDEX "Class_name_key" ON "Class"("name");
 CREATE UNIQUE INDEX "Class_supervisorId_key" ON "Class"("supervisorId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Record_id_key" ON "Record"("id");
+CREATE INDEX "Record_submitedBy_idx" ON "Record"("submitedBy");
+
+-- CreateIndex
+CREATE INDEX "Record_payedBy_idx" ON "Record"("payedBy");
+
+-- CreateIndex
+CREATE INDEX "Record_classId_idx" ON "Record"("classId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Record_payedBy_submitedAt_key" ON "Record"("payedBy", "submitedAt");
