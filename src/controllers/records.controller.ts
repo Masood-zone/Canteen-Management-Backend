@@ -4,28 +4,38 @@ import { Request, Response } from "express";
 const prisma = new PrismaClient();
 
 export const recordController = {
-  // Generate daily records for each student in a class
+  // Generate daily records for each student in a specific class or all classes
   generateDailyRecords: async (req: Request, res: Response) => {
+    const { classId } = req.query;
     const date = new Date();
     date.setHours(0, 0, 0, 0);
 
     try {
-      // Get all classes
-      const classes = await prisma.class.findMany({
-        include: { students: true },
-      });
-
       // Get the settings amount
       const settings = await prisma.settings.findFirst({
         where: { name: "amount" },
       });
       const settingsAmount = settings ? parseInt(settings.value) : 0;
 
+      // Prepare the query for fetching classes
+      const classQuery = classId
+        ? { where: { id: parseInt(classId as string) } }
+        : undefined;
+
+      // Get classes based on the query
+      const classes = await prisma.class.findMany({
+        include: { students: true },
+        ...classQuery,
+      });
+
+      const createdRecords = [];
+      const skippedRecords = [];
+
       // Generate records for each student in each class
       for (const classItem of classes) {
         for (const student of classItem.students) {
           try {
-            await prisma.record.create({
+            const record = await prisma.record.create({
               data: {
                 classId: classItem.id,
                 payedBy: student.id,
@@ -38,16 +48,16 @@ export const recordController = {
                 submitedBy: classItem.supervisorId || 0, // Assuming 0 is a valid placeholder if no supervisor
               },
             });
+            createdRecords.push(record);
           } catch (error) {
             // If a record already exists for this student on this day, skip it
             if (
               (error as Prisma.PrismaClientKnownRequestError).code === "P2002"
             ) {
-              console.log(
-                `Record already exists for student ${
-                  student.id
-                } on ${date.toISOString()}`
-              );
+              skippedRecords.push({
+                studentId: student.id,
+                date: date.toISOString(),
+              });
             } else {
               throw error;
             }
@@ -55,13 +65,16 @@ export const recordController = {
         }
       }
 
-      res.status(200).json({ message: "Daily records generated successfully" });
+      res.status(200).json({
+        message: "Daily records generated successfully",
+        createdRecords: createdRecords.length,
+        skippedRecords: skippedRecords,
+      });
     } catch (error) {
       console.error("Error generating daily records:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   },
-
   getRecordsByClass: async (classId: number, date: Date) => {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
