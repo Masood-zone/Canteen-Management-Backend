@@ -194,6 +194,18 @@ app.get("/teachers/:id/class", authenticateToken, async (req, res, next) => {
 });
 
 // Analytics routes
+// Admin analytics
+app.get(
+  "/analytics/admin-dashboard",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await analyticsController.getAdminAnalytics(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 // Teachers analytics
 app.get(
   "/analytics/teachers/:classId",
