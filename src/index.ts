@@ -12,6 +12,7 @@ import { settingsController } from "./controllers/settings.controller";
 import teacherController from "./controllers/teahers.controller";
 import { setupDailyRecordCreation } from "../services/daily-records.cron";
 import { analyticsController } from "./controllers/analytics.controller";
+import { expensesController } from "./controllers/expenses.controller";
 
 dotenv.config();
 
@@ -202,6 +203,89 @@ app.delete("/teachers/:id", authenticateToken, async (req, res, next) => {
 app.get("/teachers/:id/class", authenticateToken, async (req, res, next) => {
   try {
     await teacherController.getClassBySupervisorId(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Expenses routes
+// Get all expenses
+app.get("/expenses", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.getAllExpenses(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Get all references
+app.get("/references", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.getAllReferences(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Create an expense
+app.post("/expenses", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.createExpense(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Create a reference
+app.post("/references", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.createReference(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Get expense by id
+app.get("/expenses/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.getExpenseById(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Get reference by id
+app.get("/references/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.getReferenceById(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Update an expense
+app.put("/expenses/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.updateExpense(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Update a reference
+app.put("/references/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.updateReference(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete an expense
+app.delete("/expenses/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.deleteExpense(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Delete a reference
+app.delete("/references/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.deleteReference(req, res);
   } catch (error) {
     next(error);
   }

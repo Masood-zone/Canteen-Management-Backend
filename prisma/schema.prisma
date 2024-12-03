@@ -66,3 +66,20 @@ model Record {
   @@index([payedBy])
   @@index([classId])
 }
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  referenceId Int
+  amount      Int
+  date        DateTime @default(now())
+  description String?
+  reference   Reference @relation(fields: [referenceId], references: [id])
+  submitedBy  Int
+}
+
+model Reference {
+  id          Int      @id @unique @default(autoincrement())
+  name        String
+  description String?
+  expenses    Expense[]
+}
