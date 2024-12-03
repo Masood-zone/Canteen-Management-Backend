@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import { generateRecordsForNewStudent } from "../../services/record-generation-service";
 
 const prisma = new PrismaClient();
 
@@ -55,6 +56,9 @@ export const studentController = {
           classId,
         },
       });
+
+      await generateRecordsForNewStudent(newStudent.id);
+
       res.status(201).json(newStudent);
     } catch (error) {
       console.log(error);

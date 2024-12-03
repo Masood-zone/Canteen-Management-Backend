@@ -96,48 +96,31 @@ app.post(
 );
 app.get("/records/:classId", authenticateToken, async (req, res, next) => {
   try {
-    await recordController.getByClassAndDate(req, res);
+    await recordController.getStudentRecordsByClassAndDate(req, res);
   } catch (error) {
     next(error);
   }
 });
 app.put("/records/:id", authenticateToken, recordController.update);
 app.delete("/records/:id", authenticateToken, recordController.delete);
-// Get unpaid students
-app.get(
-  "/records/:classId/unpaid",
-  authenticateToken,
-  async (req, res, next) => {
-    try {
-      await recordController.getUnpaidStudents(req, res);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-// Get paid students
-app.get("/records/:classId/paid", authenticateToken, async (req, res, next) => {
+app.post("/records/submit", authenticateToken, async (req, res, next) => {
   try {
-    await recordController.getPaidStudents(req, res);
+    await recordController.submitTeacherRecord(req, res);
   } catch (error) {
     next(error);
   }
 });
-
-// Get absent students
 app.get(
-  "/records/:classId/absent",
+  "/records/teacher/:teacherId",
   authenticateToken,
   async (req, res, next) => {
     try {
-      await recordController.getAbsentStudents(req, res);
+      await recordController.getTeacherSubmittedRecords(req, res);
     } catch (error) {
       next(error);
     }
   }
 );
-
 // Update student status
 app.put("/records/:id/status", authenticateToken, async (req, res, next) => {
   try {
@@ -163,20 +146,6 @@ app.get("/teachers", authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
-app.get("/teachers/:id", authenticateToken, async (req, res, next) => {
-  try {
-    await teacherController.getTeacherById(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
-app.get("/teachers/:id/records", authenticateToken, async (req, res, next) => {
-  try {
-    await teacherController.getTeacherRecords(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
 app.get("/teachers/summary", authenticateToken, async (req, res, next) => {
   try {
     await teacherController.getTeachersWithRecordsSummary(req, res);
@@ -187,6 +156,20 @@ app.get("/teachers/summary", authenticateToken, async (req, res, next) => {
 app.get("/teachers/detail", authenticateToken, async (req, res, next) => {
   try {
     await teacherController.getTeacherRecordsDetail(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/teachers/:id", async (req, res, next) => {
+  try {
+    await teacherController.getTeachersById(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/teachers/:id/records", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getTeacherRecords(req, res);
   } catch (error) {
     next(error);
   }

@@ -25,59 +25,6 @@ export const teacherController = {
     }
   },
 
-  getTeacherById: async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
-
-    if (isNaN(id)) {
-      return res
-        .status(400)
-        .json({ message: "Invalid teacher ID, This does not help!" });
-    }
-
-    try {
-      const teacher = await prisma.user.findUnique({
-        where: { id: id },
-        select: {
-          id: true,
-          name: true,
-          role: true,
-          email: true,
-          phone: true,
-          gender: true,
-          assigned_class: true,
-        },
-      });
-      if (!teacher) {
-        return res.status(404).json({ message: "Teacher not found" });
-      }
-      res.status(200).json({ teacher });
-    } catch (error) {
-      console.error("Error fetching teacher:", error);
-      res.status(500).json({ message: `Internal Server Error ${error}` });
-    }
-  },
-
-  getTeacherRecords: async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid teacher ID" });
-    }
-    try {
-      const records = await prisma.record.findMany({
-        where: { submitedBy: id },
-      });
-      if (records.length === 0) {
-        return res
-          .status(404)
-          .json({ message: "No records found for this teacher." });
-      }
-      res.json({ data: records });
-    } catch (error) {
-      console.error("Error fetching records:", error);
-      res.status(500).json({ message: "Internal Server Error" });
-    }
-  },
-
   getTeachersWithRecordsSummary: async (req: Request, res: Response) => {
     const { from, to } = req.query;
 
@@ -173,6 +120,59 @@ export const teacherController = {
       res.status(200).json(teacherRecords);
     } catch (error) {
       console.error("Error fetching teacher records detail:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  },
+
+  getTeachersById: async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+
+    if (isNaN(id)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid teacher ID, This does not help!" });
+    }
+
+    try {
+      const teacher = await prisma.user.findUnique({
+        where: { id: id },
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          email: true,
+          phone: true,
+          gender: true,
+          assigned_class: true,
+        },
+      });
+      if (!teacher) {
+        return res.status(404).json({ message: "Teacher not found" });
+      }
+      res.status(200).json({ teacher });
+    } catch (error) {
+      console.error("Error fetching teacher:", error);
+      res.status(500).json({ message: `Internal Server Error ${error}` });
+    }
+  },
+
+  getTeacherRecords: async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid teacher ID" });
+    }
+    try {
+      const records = await prisma.record.findMany({
+        where: { submitedBy: id },
+      });
+      if (records.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "No records found for this teacher." });
+      }
+      res.json({ data: records });
+    } catch (error) {
+      console.error("Error fetching records:", error);
       res.status(500).json({ message: "Internal Server Error" });
     }
   },
