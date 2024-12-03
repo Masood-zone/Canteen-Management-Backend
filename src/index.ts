@@ -1,23 +1,21 @@
-const express = require("express");
-const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const dotenv = require("dotenv");
+import express from "express";
+// import { PrismaClient } from "@prisma/client";
+import dotenv from "dotenv";
+import cors from "cors";
+import jwt from "jsonwebtoken";
 
-import { Request, Response, NextFunction } from "express";
-import {
-  createAmount,
-  createUser,
-  getAmount,
-  getClassBySupervisorId,
-  submitPrepaid,
-} from "../services/prisma.queries";
+import { recordController } from "./controllers/records.controller";
+import { classController } from "./controllers/class.controller";
+import { userController } from "./controllers/users.controller";
+import { studentController } from "./controllers/student.controller";
+import { settingsController } from "./controllers/settings.controller";
+import teacherController from "./controllers/teahers.controller";
+import { setupDailyRecordCreation } from "../services/daily-records.cron";
+import { analyticsController } from "./controllers/analytics.controller";
+import { expensesController } from "./controllers/expenses.controller";
+
 dotenv.config();
 
-import userRouter from "./controllers/users.controller";
-const { teacherRouter } = require("./controllers/teahers.controller");
-import cors from "cors";
-const prisma = new PrismaClient();
 const app = express();
 
 const corsOptions = {
@@ -27,373 +25,309 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use("/teachers", teacherRouter);
-app.use("/users", userRouter);
 
-function authenticateToken(req: any, res: any, next: NextFunction) {
+// Authentication middleware
+function authenticateToken(req: any, res: any, next: Function) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  if (!token) return res.sendStatus(401); // No token provided
+  if (!token) return res.sendStatus(401);
 
-  jwt.verify(token, process.env.TOKEN_SECRET, (err: any, user: any) => {
-    if (err) return res.sendStatus(401); // Invalid token
-    req.user = user; // Save user info for use in other routes
-    next();
-  });
+  jwt.verify(
+    token,
+    process.env.TOKEN_SECRET as string,
+    (err: any, user: any) => {
+      if (err) return res.sendStatus(403);
+      req.user = user;
+      next();
+    }
+  );
 }
 
-app.post("/signup", async (req: Request, res: Response) => {
-  const { email, password, role, name, phone } = req.body;
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const toSave = {
-    email: email,
-    password: hashedPassword,
-    role: role,
-    name: name,
-    phone: phone,
-  };
-  try {
-    const result = await createUser(toSave);
-    res
-      .status(201)
-      .json({ message: "user created successfully", data: result });
-  } catch (error) {
-    res.status(400).json({ error: "User already exists or invalid data" });
-  }
+// User routes
+app.post("/signup", (req, res, next) => {
+  userController.signup(req, res).catch(next); //Works
 });
-
-app.post("/login", async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
-  const user = await prisma.user.findUnique({ where: { email } });
-
-  if (!user) {
-    return res.status(400).json({ error: "Invalid credentials" });
-  }
-
-  // Validate password
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    return res.status(400).json({ error: "Invalid credentials" });
-  }
-
-  // Generate JWT token
-  const token = jwt.sign(
-    { id: user.id, email: user.email },
-    process.env.TOKEN_SECRET as string,
-    { expiresIn: "2d" }
-  );
-
-  const { password: _, ...userWithoutPassword } = user;
-  res.json({ token, user: userWithoutPassword });
+app.post("/login", (req, res, next) => {
+  userController.login(req, res).catch(next); //Works
 });
+app.get("/users", authenticateToken, userController.getAll); //works
+app.get("/users/:id", authenticateToken, userController.getById); //works
+app.put("/users/:id", authenticateToken, userController.update); //works
+app.delete("/users/:id", authenticateToken, userController.delete); //works
 
-app.get("/classes", authenticateToken, async (req: Request, res: Response) => {
-  const classes = await prisma.class.findMany();
-  res.json(classes);
-});
-
-app.put("/classes/:name/assign", async (req: Request, res: any) => {
-  const class_name = req.params.name;
-  const { teacher_email } = req.body;
-
-  // Validate input
-  if (!class_name || !teacher_email) {
-    return res
-      .status(400)
-      .json({ message: "Class name and teacher email are required." });
-  }
-
-  try {
-    const teacher = await prisma.user.findUnique({
-      where: { email: teacher_email },
-    });
-
-    if (!teacher) {
-      return res.status(404).json({ message: "Teacher not found." });
-    }
-
-    const updatedClass = await prisma.class.update({
-      where: { name: class_name },
-      data: {
-        supervisorId: teacher.id,
-      },
-    });
-
-    return res
-      .status(200)
-      .json({ message: "User assigned successfully", updatedClass });
-  } catch (error) {
-    console.error("Error assigning teacher:", error);
-    return res.status(500).json({ message: "Internal Server Error", error });
-  }
-});
-
-app.get("/classes/:id/supervisor", async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  try {
-    const data = await getClassBySupervisorId(id);
-    return res.json({ supervisor: data });
-  } catch (err) {
-    return res.json({ err }).status(500);
-  }
-});
-
-app.get("/classes/:id", async (req: Request, res: any) => {
-  const class_id = req.params.id;
-
-  // Validate input
-  if (!class_id) {
-    return res
-      .status(400)
-      .json({ message: "Class id is required but it's not provided" });
-  }
-
-  try {
-    const current_class = await prisma.class.findUnique({
-      where: { id: Number(class_id) },
-    });
-    if (!current_class) {
-      return res.json({ message: "class not found" }).status(400);
-    }
-
-    return res.status(201).json({ current_class });
-  } catch (error) {
-    console.error("Error assigning teacher:", error);
-    return res.status(500).json({ message: "Internal Server Error", error });
-  }
-});
-
-app.post("/classes", authenticateToken, async (req: Request, res: Response) => {
-  const { name, description, supervisorId } = req.body;
-
-  try {
-    const newClass = await prisma.class.create({
-      data: {
-        name,
-        description,
-        supervisorId,
-      },
-    });
-    res.status(201).json(newClass);
-  } catch (error) {
-    res.status(400).json({ error: "Error creating class" });
-  }
-});
-app.put(
-  "/classes/:id",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    const { name, description, supervisorId } = req.body;
-
-    try {
-      const updatedClass = await prisma.class.update({
-        where: {
-          id: parseInt(id),
-        },
-        data: {
-          name,
-          description,
-          supervisorId,
-        },
-      });
-      res.json(updatedClass);
-    } catch (error) {
-      res.status(400).json({ error: `Error updating class ${error}` });
-    }
-  }
-);
-
-app.get("/students", authenticateToken, async (req: Request, res: Response) => {
-  const students = await prisma.student.findMany();
-  res.json(students);
-});
-
+// Class routes
+app.get("/classes", authenticateToken, classController.getAll); //works
+app.get("/classes/:id", authenticateToken, classController.getById); //works
+app.post("/classes", authenticateToken, classController.create); //works
+app.put("/classes/:id", authenticateToken, classController.update); //works
+app.delete("/classes/:id", authenticateToken, classController.delete); //works
+app.put("/classes/:name/assign", authenticateToken, (req, res, next) => {
+  classController.assignTeacher(req, res).catch(next);
+}); //Not used
 app.get(
-  "/students/:id/records",
+  "/classes/:id/supervisor",
   authenticateToken,
-  async (req: Request, res: Response) => {
-    const student_id = req.params?.id;
-    try {
-      const records_data = await prisma.records.findMany({
-        where: { payedBy: student_id },
-      });
-      return res.json({ data: records_data }).status(200);
-    } catch (error) {
-      return res.json(error).status(400);
-    }
-  }
-);
+  classController.getClassBySupervisorId
+); //works
 
+// Student routes
+app.get("/students", authenticateToken, studentController.getAll);
+app.get("/students/:id", authenticateToken, studentController.getById);
 app.get(
-  "/students/:id",
+  "/students/class/:classId",
   authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    const students = await prisma.student.findUnique({
-      where: { id: parseInt(id) },
-    });
-    res.json(students);
-  }
+  studentController.getClassById
 );
-
-app.get("/settings/amount", async (req: any, res: any) => {
+app.post("/students", authenticateToken, async (req, res, next) => {
   try {
-    const data = await getAmount();
-    return res.status(200).json({ data: data }); // Set status before sending JSON
-  } catch (err) {
-    console.error("Error fetching amount:", err); // Log the error for debugging
-    return res.status(400).json({ err }); // Send a user-friendly error message
+    await studentController.create(req, res);
+  } catch (error) {
+    next(error);
   }
 });
+app.put("/students/:id", authenticateToken, studentController.update);
+app.delete("/students/:id", authenticateToken, studentController.delete);
 
-app.post("/settings/amount", async (req: any, res: any) => {
-  const { amount } = req.body;
-
-  // Check if conversion was successful
-  if (isNaN(amount)) {
-    return res.status(400).json({ error: "Invalid amount: must be a number" });
-  }
-
+// Record routes
+app.get("/records", authenticateToken, async (req, res, next) => {
   try {
-    const data = await createAmount(amount);
-    return res.status(200).json({ data: data }); // Correct order of response methods
-  } catch (err) {
-    return res.status(400).json(err);
+    await recordController.getAllRecords(req, res);
+  } catch (error) {
+    next(error);
   }
 });
-
-app.get(
-  "/students/:id",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    const { name, age, parentPhone, classId, gender } = req.body;
-    try {
-      const updatedStudent = await prisma.student.update({
-        where: { id: parseInt(id) },
-        data: {
-          name,
-          age,
-          parentPhone,
-          classId,
-          gender,
-        },
-      });
-      res.json(updatedStudent);
-    } catch (error) {
-      res.status(400).json({ error: `Error updating student ${error}` });
-    }
-  }
-);
-
 app.post(
-  "/students",
+  "/records/generate-daily",
   authenticateToken,
-  async (req: Request, res: Response) => {
-    const { name, age, parentPhone, classId, gender } = req.body;
-
-    try {
-      const newStudent = await prisma.student.create({
-        data: {
-          name,
-          age,
-          parentPhone,
-          classId,
-          gender,
-        },
-      });
-      res.status(201).json(newStudent);
-    } catch (error) {
-      res.status(400).json({ error: `Error creating student: ${error}` });
-    }
-  }
+  recordController.generateDailyRecords
 );
-
-app.get("/records", authenticateToken, async (req: any, res: any) => {
-  const records = await prisma.record.findMany();
-  res.json(records);
-});
-
-app.post("/records", authenticateToken, async (req: any, res: any) => {
-  const { amount, submiter_email, student_name, isPrepaid } = req.body;
-
+app.get("/records/:classId", authenticateToken, async (req, res, next) => {
   try {
-    const payer = await prisma.student.findUnique({
-      where: { name: student_name },
-    });
-    const submiter = await prisma.user.findUnique({
-      where: { email: submiter_email },
-    });
-    const newRecord = await prisma.record.create({
-      data: {
-        amount,
-        submitedBy: submiter.id,
-        payedBy: payer.id,
-        isPrepaid,
-      },
-    });
-    res.status(201).json(newRecord);
+    await recordController.getStudentRecordsByClassAndDate(req, res);
   } catch (error) {
-    res.status(400).json({ error, message: "There was an error" });
+    next(error);
+  }
+});
+app.put("/records/:id", authenticateToken, recordController.update);
+app.delete("/records/:id", authenticateToken, recordController.delete);
+app.post("/records/submit", authenticateToken, async (req, res, next) => {
+  try {
+    await recordController.submitTeacherRecord(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get(
+  "/records/teacher/:teacherId",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await recordController.getTeacherSubmittedRecords(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+// Update student status
+app.put("/records/:id/status", authenticateToken, async (req, res, next) => {
+  try {
+    await recordController.updateStudentStatus(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Settings routes
+app.get("/settings/amount", authenticateToken, settingsController.getAmount);
+app.post("/settings/amount", authenticateToken, (req, res, next) => {
+  settingsController.createAmount(req, res).catch(next);
+});
+app.put("/settings/amount", authenticateToken, (req, res, next) => {
+  settingsController.updateAmount(req, res).catch(next);
+});
+
+// Teacher routes
+app.get("/teachers", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getAllTeachers(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/teachers/summary", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getTeachersWithRecordsSummary(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get(
+  "/teachers/:teacherId/detail",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await teacherController.getTeacherRecordsDetail(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+app.get("/teachers/:id", async (req, res, next) => {
+  try {
+    await teacherController.getTeachersById(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/teachers/:id/records", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getTeacherRecords(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.post("/teachers", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.createTeacher(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.put("/teachers/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.updateTeacher(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.delete("/teachers/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.deleteTeacher(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/teachers/:id/class", authenticateToken, async (req, res, next) => {
+  try {
+    await teacherController.getClassBySupervisorId(req, res);
+  } catch (error) {
+    next(error);
   }
 });
 
-// Delete enpoints requests - students, classes, teachers and records
-app.delete(
-  "/students/:id",
+// Expenses routes
+// Get all expenses
+app.get("/expenses", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.getAllExpenses(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Get all references
+app.get("/references", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.getAllReferences(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Create an expense
+app.post("/expenses", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.createExpense(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Create a reference
+app.post("/references", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.createReference(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Get expense by id
+app.get("/expenses/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.getExpenseById(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Get reference by id
+app.get("/references/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.getReferenceById(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Update an expense
+app.put("/expenses/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.updateExpense(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Update a reference
+app.put("/references/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.updateReference(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete an expense
+app.delete("/expenses/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.deleteExpense(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+// Delete a reference
+app.delete("/references/:id", authenticateToken, async (req, res, next) => {
+  try {
+    await expensesController.deleteReference(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Analytics routes
+// Admin analytics
+app.get(
+  "/analytics/admin-dashboard",
   authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
+  async (req, res, next) => {
     try {
-      await prisma.student.delete({
-        where: { id: parseInt(id) },
-      });
-      res.status(204).send();
+      await analyticsController.getAdminAnalytics(req, res);
     } catch (error) {
-      res.status(400).json({ error: `Error deleting student: ${error}` });
+      next(error);
+    }
+  }
+);
+// Teachers analytics
+app.get(
+  "/analytics/teachers/:classId",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await analyticsController.getTeacherAnalytics(req, res);
+    } catch (error) {
+      next(error);
     }
   }
 );
 
-app.delete(
-  "/classes/:id",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    try {
-      await prisma.class.delete({
-        where: { id: parseInt(id) },
-      });
-      res.status(204).send();
-    } catch (error) {
-      res.status(400).json({ error: `Error deleting class: ${error}` });
-    }
-  }
-);
-
-app.delete(
-  "/records/:id",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    try {
-      await prisma.record.delete({
-        where: { id: parseInt(id) },
-      });
-      res.status(204).send();
-    } catch (error) {
-      res.status(400).json({ error: `Error deleting record: ${error}` });
-    }
-  }
-);
-
+const PORT = process.env.PORT || 3400;
+// Setup daily cron job
+setupDailyRecordCreation();
 // Start the server
-const server = app.listen(3000, () =>
-  console.log(`
-🚀 Server ready at: http://localhost:3000
-⭐️ See sample requests`)
-);
+app.listen(PORT, () => {
+  console.log(`Server is running on port http://localhost:${PORT}`);
+});

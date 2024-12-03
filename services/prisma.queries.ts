@@ -15,31 +15,17 @@ export async function getAllTeachers() {
       gender: true,
       assigned_class: true,
     },
-    where: { role: "Teacher" },
+    where: { role: { in: ["Teacher", "TEACHER"] } },
   });
   return data;
 }
 
-export const updateUser = async (req: Request, res: Response) => {
-  const id = req.params.id;
-  const { name, email, phone, gender } = req.body;
-
-  try {
-    const updatedUser = await prisma.user.update({
-      where: { id: Number(id) },
-      data: { name, email, phone, gender },
-    });
-
-    res.json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ error: "User update failed" });
-  }
-};
 export async function submitPrepaid(
   set_amount: number,
   amount: number,
   payedBy: number,
-  submitedBy: number
+  submitedBy: number,
+  classId: number
 ) {
   // Validate inputs
   if (set_amount <= 0 || amount <= 0) {
@@ -67,6 +53,8 @@ export async function submitPrepaid(
         payedBy: payedBy,
         submitedAt: submissionDate, // Use incremented date
         isPrepaid: true,
+        hasPaid: true,
+        classId: classId,
       },
     });
 
@@ -76,10 +64,10 @@ export async function submitPrepaid(
   return records; // Return all created records
 }
 
-export async function createAmount(amount: any) {
+export async function createAmount(amount: number) {
   const amount_update = await prisma.settings.create({
     data: {
-      value: amount,
+      value: amount.toString(),
       name: "amount",
     },
   });
@@ -87,14 +75,20 @@ export async function createAmount(amount: any) {
 }
 
 export async function updateAmount(amount: string) {
-  const amount_update = await prisma.settings.create({
-    data: {
-      id: 1,
-      value: amount,
-      name: "amount",
-    },
-  });
-  return amount_update;
+  try {
+    const amount_update = await prisma.settings.update({
+      where: {
+        id: 1,
+      },
+      data: {
+        value: amount.toString(),
+      },
+    });
+    return amount_update;
+  } catch (error) {
+    console.error("Error updating amount:", error);
+    throw new Error("Failed to update amount setting");
+  }
 }
 
 export async function getAmount() {

@@ -30,8 +30,9 @@ model Class {
   name         String    @unique // Ensure class names are unique
   description  String?
   supervisorId Int?      @unique // Each class can have one unique supervisor
+  records Record[]
+  students     Student[]
   supervisor   User?     @relation(fields: [supervisorId], references: [id])
-  students     Student[] // One-to-many relationship with Student
 }
 
 model Student {
@@ -39,19 +40,46 @@ model Student {
   name        String
   age         Int
   parentPhone String?
-  classId     Int?
   gender     String?
-  class       Class?   @relation(fields: [classId], references: [id])
+  classId     Int?
+  class       Class?  @relation(fields: [classId], references: [id])
   Record      Record[]
 }
 
 model Record {
-  id         Int      @id @unique @default(autoincrement())
-  amount     Int
-  submitedAt DateTime @default(now())
-  submitedBy Int
-  payedBy    Int?
-  isPrepaid  Boolean  @default(false)
-  user       User?    @relation(fields: [submitedBy], references: [id])
-  student    Student? @relation(fields: [payedBy], references: [id])
+  id             Int      @id @default(autoincrement())
+  amount         Int
+  submitedAt     DateTime @default(now())
+  submitedBy     Int
+  payedBy        Int?
+  isPrepaid      Boolean  @default(false)
+  hasPaid        Boolean  @default(false)
+  isAbsent       Boolean  @default(false)
+  settingsAmount Int
+  teacher        User     @relation(fields: [submitedBy], references: [id])
+  student        Student? @relation(fields: [payedBy], references: [id])
+  classId        Int?     
+  class          Class?   @relation(fields: [classId], references: [id])
+
+  @@unique([payedBy, submitedAt])
+  @@index([submitedBy])
+  @@index([payedBy])
+  @@index([classId])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  referenceId Int
+  amount      Int
+  date        DateTime @default(now())
+  description String?
+  reference   Reference @relation(fields: [referenceId], references: [id])
+  submitedBy  Int
+}
+
+model Reference {
+  id          Int      @id @unique @default(autoincrement())
+  name        String
+  description String?
+  expenses    Expense[]
 }
