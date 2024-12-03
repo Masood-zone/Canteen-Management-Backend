@@ -153,13 +153,17 @@ app.get("/teachers/summary", authenticateToken, async (req, res, next) => {
     next(error);
   }
 });
-app.get("/teachers/detail", authenticateToken, async (req, res, next) => {
-  try {
-    await teacherController.getTeacherRecordsDetail(req, res);
-  } catch (error) {
-    next(error);
+app.get(
+  "/teachers/:teacherId/detail",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await teacherController.getTeacherRecordsDetail(req, res);
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 app.get("/teachers/:id", async (req, res, next) => {
   try {
     await teacherController.getTeachersById(req, res);
