@@ -223,6 +223,16 @@ export const recordController = {
     }
   },
 
+  getAllRecords: async (req: Request, res: Response) => {
+    try {
+      const records = await prisma.record.findMany();
+      res.status(200).json(records);
+    } catch (error) {
+      console.error("Error fetching records:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  },
+
   getStudentRecordsByClassAndDate: async (req: Request, res: Response) => {
     const classId = parseInt(req.params.classId);
     const date = new Date(req.query.date as string);

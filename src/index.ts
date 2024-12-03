@@ -90,6 +90,13 @@ app.put("/students/:id", authenticateToken, studentController.update);
 app.delete("/students/:id", authenticateToken, studentController.delete);
 
 // Record routes
+app.get("/records", authenticateToken, async (req, res, next) => {
+  try {
+    await recordController.getAllRecords(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
 app.post(
   "/records/generate-daily",
   authenticateToken,

@@ -123,23 +123,19 @@ export const expensesController = {
     try {
       const { id } = req.params;
       const { references, amount, date, description, submittedBy } = req.body;
-
+      const amountData = parseFloat(amount);
       const expense = await prisma.expense.update({
         where: {
           id: parseInt(id),
         },
         data: {
-          amount,
+          amount: amountData,
           date: date ? new Date(date) : new Date(),
           description,
           submitedBy: submittedBy,
           reference: {
-            connectOrCreate: {
-              where: { id: references.id },
-              create: {
-                name: references.name,
-                description: references.description,
-              },
+            connect: {
+              id: references?.id,
             },
           },
         },
