@@ -119,7 +119,6 @@ export const teacherController = {
             not: null,
           },
         },
-
         include: {
           student: true,
           class: true,
