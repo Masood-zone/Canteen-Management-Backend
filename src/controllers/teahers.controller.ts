@@ -55,6 +55,9 @@ export const teacherController = {
                 gte: startDate,
                 lte: endDate,
               },
+              payedBy: {
+                not: null,
+              },
             },
             select: {
               amount: true,
@@ -112,7 +115,11 @@ export const teacherController = {
             gte: startOfDay,
             lte: endOfDay,
           },
+          payedBy: {
+            not: null,
+          },
         },
+
         include: {
           student: true,
           class: true,
