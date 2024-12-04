@@ -43,13 +43,12 @@ export const studentController = {
   },
 
   create: async (req: Request, res: Response) => {
-    const { name, age, parentPhone, gender, classId } = req.body;
+    const { name, age, gender, classId } = req.body;
     try {
       const newStudent = await prisma.student.create({
         data: {
           name,
           age: parseInt(age),
-          parentPhone,
           gender,
           classId,
         },
@@ -67,14 +66,13 @@ export const studentController = {
 
   update: async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { name, age, parentPhone, gender } = req.body;
+    const { name, age, gender } = req.body;
     try {
       const updatedStudent = await prisma.student.update({
         where: { id: parseInt(id) },
         data: {
           name,
           age: parseInt(age),
-          parentPhone,
           gender,
         },
       });
