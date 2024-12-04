@@ -24,20 +24,22 @@ export const teacherController = {
   },
 
   getTeachersWithRecordsSummary: async (req: Request, res: Response) => {
-    const { from, to } = req.query;
+    const { date } = req.query;
 
-    if (!from || !to) {
-      return res
-        .status(400)
-        .json({ message: "Start and end dates are required" });
+    if (!date) {
+      return res.status(400).json({ message: "Date is required" });
     }
 
-    const startDate = new Date(from as string);
-    const endDate = new Date(to as string);
+    const selectedDate = new Date(date as string);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (isNaN(selectedDate.getTime())) {
       return res.status(400).json({ message: "Invalid date format" });
     }
+
+    const startDate = new Date(selectedDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(selectedDate);
+    endDate.setHours(23, 59, 59, 999);
 
     try {
       const teacherRecords = await prisma.user.findMany({
@@ -60,14 +62,13 @@ export const teacherController = {
           },
         },
       });
-      //Check for empty records
+
       if (teacherRecords.length === 0) {
         return res
           .status(404)
-          .json({ message: "No records found for this teacher." });
+          .json({ message: "No records found for this date." });
       }
 
-      // Format the records to include the total amount
       const formattedRecords = teacherRecords.map((teacher) => ({
         id: teacher.id,
         name: teacher.name,

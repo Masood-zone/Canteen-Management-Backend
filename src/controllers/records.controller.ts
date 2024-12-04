@@ -97,6 +97,9 @@ export const recordController = {
             gte: startOfDay,
             lte: endOfDay,
           },
+          payedBy: {
+            not: null,
+          },
         },
         include: { student: true },
       });
@@ -356,6 +359,9 @@ export const recordController = {
           submitedAt: {
             gte: startOfDay,
             lte: endOfDay,
+          },
+          payedBy: {
+            not: null,
           },
         },
         include: {

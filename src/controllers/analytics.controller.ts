@@ -52,6 +52,9 @@ export const analyticsController = {
               classId: parseInt(classId),
               submitedAt: { gte: today },
               hasPaid: true,
+              payedBy: {
+                not: null,
+              },
             },
           }),
           prisma.record.count({
@@ -59,6 +62,9 @@ export const analyticsController = {
               classId: parseInt(classId),
               submitedAt: { gte: today },
               hasPaid: false,
+              payedBy: {
+                not: null,
+              },
             },
           }),
         ]);
