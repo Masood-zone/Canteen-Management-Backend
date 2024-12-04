@@ -119,7 +119,7 @@ export const recordController = {
                   hasPaid: false,
                   isPrepaid: false,
                   isAbsent: false,
-                  settingsAmount,
+                  settingsAmount: settingsAmount,
                   submitedBy: classId,
                 },
                 include: { student: true },
