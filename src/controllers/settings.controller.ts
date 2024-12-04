@@ -7,7 +7,7 @@ export const settingsController = {
       const setting = await prisma.settings.findFirst({
         where: { name: "amount" },
       });
-      res.status(200).json({ data: setting });
+      res.status(200).json({ setting });
     } catch (error) {
       console.error("Error fetching amount:", error);
       res.status(400).json({ error: "Error fetching amount" });
