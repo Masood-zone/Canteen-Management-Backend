@@ -20,8 +20,8 @@ const app = express();
 
 const corsOptions = {
   origin: [
-    "http://localhost:3000",
     "https://canteen-management-frontend.vercel.app",
+    "http://localhost:3000",
   ],
   optionsSuccessStatus: 200,
 };
