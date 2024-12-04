@@ -19,7 +19,10 @@ dotenv.config();
 const app = express();
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: [
+    "http://localhost:3000",
+    "https://canteen-management-frontend.vercel.app",
+  ],
   optionsSuccessStatus: 200,
 };
 
