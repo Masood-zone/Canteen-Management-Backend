@@ -89,7 +89,7 @@ export const recordController = {
         where: { name: "amount" },
       });
 
-      const settingsAmount = settings ? parseInt(settings.value) : 0;
+      const settingsAmount = settings ? parseInt(settings?.value) : 0;
 
       const existingRecords = await prisma.record.findMany({
         where: {
