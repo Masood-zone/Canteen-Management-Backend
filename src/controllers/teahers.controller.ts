@@ -87,24 +87,30 @@ export const teacherController = {
 
   getTeacherRecordsDetail: async (req: Request, res: Response) => {
     const { teacherId } = req.params;
-    const { from, to } = req.query;
+    const { date } = req.query;
 
-    if (!from || !to) {
-      return res
-        .status(400)
-        .json({ message: "Start and end dates are required" });
+    if (!date) {
+      return res.status(400).json({ message: "Date is required" });
     }
 
-    const startDate = new Date(from as string);
-    const endDate = new Date(to as string);
+    const selectedDate = new Date(date as string);
+
+    if (isNaN(selectedDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date format" });
+    }
+
+    const startOfDay = new Date(selectedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(selectedDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
     try {
       const teacherRecords = await prisma.record.findMany({
         where: {
           submitedBy: parseInt(teacherId),
           submitedAt: {
-            gte: startDate,
-            lte: endDate,
+            gte: startOfDay,
+            lte: endOfDay,
           },
         },
         include: {
