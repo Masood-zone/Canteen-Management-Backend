@@ -187,7 +187,6 @@ export const recordController = {
       res.status(500).json({ error: "Internal Server Error" });
     }
   },
-
   updateStudentStatus: async (req: Request, res: Response) => {
     const { id } = req.params;
     const { hasPaid, isAbsent } = req.body;
@@ -220,7 +219,6 @@ export const recordController = {
       }
     }
   },
-
   getAllRecords: async (req: Request, res: Response) => {
     try {
       const records = await prisma.record.findMany();
@@ -230,7 +228,6 @@ export const recordController = {
       res.status(500).json({ error: "Internal Server Error" });
     }
   },
-
   getStudentRecordsByClassAndDate: async (req: Request, res: Response) => {
     const classId = parseInt(req.params.classId);
     const date = new Date(req.query.date as string);
@@ -252,6 +249,9 @@ export const recordController = {
             gte: startOfDay,
             lte: endOfDay,
           },
+          payedBy: {
+            not: null,
+          },
         },
         include: { student: true },
       });
@@ -262,7 +262,6 @@ export const recordController = {
       res.status(500).json({ error: "Internal Server Error" });
     }
   },
-
   submitTeacherRecord: async (req: Request, res: Response) => {
     const {
       classId,
@@ -403,7 +402,6 @@ export const recordController = {
       res.status(500).json({ error: "Internal Server Error" });
     }
   },
-
   update: async (req: Request, res: Response) => {
     const { id } = req.params;
     const {
@@ -433,7 +431,6 @@ export const recordController = {
       res.status(400).json({ error: "Error updating record" });
     }
   },
-
   delete: async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
