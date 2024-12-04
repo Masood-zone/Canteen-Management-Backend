@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "sourceMap": true,
-    "outDir": "dist",
+    "target": "es6",
+    "module": "commonjs",
+    "outDir": "./dist",
     "strict": true,
-    "lib": ["esnext"],
     "esModuleInterop": true
-  }
+  },
+  "include": ["src/**/*"]
 }
