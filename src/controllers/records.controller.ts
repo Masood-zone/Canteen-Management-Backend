@@ -1,7 +1,6 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
-
-const prisma = new PrismaClient();
+import prisma from "../../lib/prisma";
 
 export const recordController = {
   // Generate daily records for each student in a specific class or all classes

@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { generateRecordsForNewStudent } from "../../services/record-generation-service";
-
-const prisma = new PrismaClient();
+import prisma from "../../lib/prisma";
 
 export const studentController = {
   // GetAll

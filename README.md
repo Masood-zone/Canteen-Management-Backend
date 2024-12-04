@@ -42,24 +42,27 @@ This example uses a local SQLite database by default. If you want to use to [Pri
 
 1. Set up a new Prisma Postgres instance in the Prisma Data Platform [Console](https://console.prisma.io) and copy the database connection URL.
 2. Update the `datasource` block to use `postgresql` as the `provider` and paste the database connection URL as the value for `url`:
-    ```prisma
-    datasource db {
-      provider = "postgresql"
-      url      = "prisma+postgres://accelerate.prisma-data.net/?api_key=ey...."
-    }
-    ```
 
-    > **Note**: In production environments, we recommend that you set your connection URL via an [environment variable](https://www.prisma.io/docs/orm/more/development-environment/environment-variables/managing-env-files-and-setting-variables), e.g. using a `.env` file.
+   ```prisma
+   datasource db {
+     provider = "postgresql"
+     url      = "prisma+postgres://accelerate.prisma-data.net/?api_key=ey...."
+   }
+   ```
+
+   > **Note**: In production environments, we recommend that you set your connection URL via an [environment variable](https://www.prisma.io/docs/orm/more/development-environment/environment-variables/managing-env-files-and-setting-variables), e.g. using a `.env` file.
+
 3. Install the Prisma Accelerate extension:
-    ```
-    npm install @prisma/extension-accelerate
-    ```
+   ```
+   npm install @prisma/extension-accelerate
+   ```
 4. Add the Accelerate extension to the `PrismaClient` instance:
-    ```diff
-    + import { withAccelerate } from "@prisma/extension-accelerate"
 
-    + const prisma = new PrismaClient().$extends(withAccelerate())
-    ```
+   ```diff
+   + import { withAccelerate } from "@prisma/extension-accelerate"
+
+   + const prisma = new PrismaClient().$extends(withAccelerate())
+   ```
 
 That's it, your project is now configured to use Prisma Postgres!
 
@@ -78,7 +81,6 @@ When `npx prisma migrate dev` is executed against a newly created database, seed
 ```
 npx prisma db seed
 ```
-
 
 ### 3. Start the REST API server
 
@@ -103,6 +105,7 @@ You can access the REST API of the server using the following endpoints:
     - `orderBy` (optional): The sort order for posts in either ascending or descending order. The value can either `asc` or `desc`
 - `/user/:id/drafts`: Fetch user's drafts by their `id`
 - `/users`: Fetch all users
+
 ### `POST`
 
 - `/post`: Create a new post
@@ -124,7 +127,6 @@ You can access the REST API of the server using the following endpoints:
 ### `DELETE`
 
 - `/post/:id`: Delete a post by its `id`
-
 
 ## Evolving the app
 
@@ -187,23 +189,23 @@ You can now use your `PrismaClient` instance to perform operations against the n
 Update your `index.ts` file by adding a new endpoint to your API:
 
 ```ts
-app.post('/user/:id/profile', async (req, res) => {
-  const { id } = req.params
-  const { bio } = req.body
+app.post("/user/:id/profile", async (req, res) => {
+  const { id } = req.params;
+  const { bio } = req.body;
 
   const profile = await prisma.profile.create({
     data: {
       bio,
       user: {
         connect: {
-          id: Number(id)
-        }
-      }
-    }
-  })
+          id: Number(id),
+        },
+      },
+    },
+  });
 
-  res.json(profile)
-})
+  res.json(profile);
+});
 ```
 
 #### 2.2 Testing out your new endpoint
@@ -216,7 +218,6 @@ Restart your application server and test out your new endpoint.
   - Body:
     - `bio: String` : The bio of the user
 
-
 <details><summary>Expand to view more sample Prisma Client queries on <code>Profile</code></summary>
 
 Here are some more sample Prisma Client queries on the new <code>Profile</code> model:
@@ -226,12 +227,12 @@ Here are some more sample Prisma Client queries on the new <code>Profile</code> 
 ```ts
 const profile = await prisma.profile.create({
   data: {
-    bio: 'Hello World',
+    bio: "Hello World",
     user: {
-      connect: { email: 'alice@prisma.io' },
+      connect: { email: "alice@prisma.io" },
     },
   },
-})
+});
 ```
 
 ##### Create a new user with a new profile
@@ -239,37 +240,37 @@ const profile = await prisma.profile.create({
 ```ts
 const user = await prisma.user.create({
   data: {
-    email: 'john@prisma.io',
-    name: 'John',
+    email: "john@prisma.io",
+    name: "John",
     profile: {
       create: {
-        bio: 'Hello World',
+        bio: "Hello World",
       },
     },
   },
-})
+});
 ```
 
 ##### Update the profile of an existing user
 
 ```ts
 const userWithUpdatedProfile = await prisma.user.update({
-  where: { email: 'alice@prisma.io' },
+  where: { email: "alice@prisma.io" },
   data: {
     profile: {
       update: {
-        bio: 'Hello Friends',
+        bio: "Hello Friends",
       },
     },
   },
-})
+});
 ```
 
 </details>
 
 ## Switch to another database (e.g. PostgreSQL, MySQL, SQL Server, MongoDB)
 
-If you want to try this example with another database than SQLite, you can adjust the the database connection in [`prisma/schema.prisma`](./prisma/schema.prisma) by reconfiguring the `datasource` block. 
+If you want to try this example with another database than SQLite, you can adjust the the database connection in [`prisma/schema.prisma`](./prisma/schema.prisma) by reconfiguring the `datasource` block.
 
 Learn more about the different connection configurations in the [docs](https://www.prisma.io/docs/reference/database-reference/connection-urls).
 
@@ -345,5 +346,23 @@ datasource db {
 - Share your feedback on the [Prisma Discord](https://pris.ly/discord/)
 - Create issues and ask questions on [GitHub](https://github.com/prisma/prisma/)
 
+# canteen-management-backend
 
-# new-canteen-backend
+## **Folder Structure**
+
+This is the project structure:
+
+src/
+├── prisma/ // Prisma folder
+├──migrations // Migrations folder
+├──dev.db
+├──schema.prisma
+├──seed.ts
+├── services/ // Services folder
+├──daily-records-cron.ts
+├──prisma.queries.ts
+├──record-generation-service.ts
+├── src/ // Source folder
+├──controllers //Controllers folder
+├──types
+├──index.ts //Main file

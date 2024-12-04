@@ -25,7 +25,7 @@ async function main() {
         gender: "male",
         assigned_class: {
           connect: {
-            code: "JHS1",
+            id: 1,
           },
         },
       },
@@ -38,14 +38,14 @@ async function main() {
   const classes = await Promise.all([
     prisma.class.create({
       data: {
+        id: 1,
         name: "JHS 1",
-        code: "JHS1",
       },
     }),
     prisma.class.create({
       data: {
+        id: 2,
         name: "JHS 2",
-        code: "JHS2",
       },
     }),
   ]);
