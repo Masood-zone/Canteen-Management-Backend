@@ -119,7 +119,7 @@ export const recordController = {
                   hasPaid: false,
                   isPrepaid: false,
                   isAbsent: false,
-                  settingsAmount: settingsAmount,
+                  settingsAmount: Number(settingsAmount),
                   submitedBy: classId,
                 },
                 include: { student: true },
@@ -133,7 +133,7 @@ export const recordController = {
                 const foundRecord = await prisma.record.findFirst({
                   where: {
                     classId,
-                    settingsAmount: settingsAmount,
+                    settingsAmount: Number(settingsAmount),
                     payedBy: student.id,
                     submitedAt: {
                       gte: startOfDay,
