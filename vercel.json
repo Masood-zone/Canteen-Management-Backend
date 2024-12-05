@@ -15,7 +15,7 @@
   "crons": [
     {
       "path": "/api/daily-record-creation",
-      "schedule": "35 11 * * *"
+      "schedule": "55 11 * * *"
     }
   ]
 }
