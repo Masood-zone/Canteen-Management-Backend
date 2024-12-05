@@ -11,5 +11,11 @@
       "src": "/(.*)",
       "dest": "src/index.ts"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/daily-record-creation",
+      "schedule": "35 11 * * *"
+    }
   ]
 }
