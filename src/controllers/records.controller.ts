@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import prisma from "../../lib/prisma";
+import { TeacherRecord } from "../types/records.interface";
 
 export const recordController = {
   // Generate daily records for each student in a specific class or all classes
@@ -98,7 +99,7 @@ export const recordController = {
             lte: endOfDay,
           },
           payedBy: {
-            not: null,
+            not: undefined,
           },
         },
         include: { student: true },
@@ -253,7 +254,7 @@ export const recordController = {
             lte: endOfDay,
           },
           payedBy: {
-            not: null,
+            not: undefined,
           },
         },
         include: { student: true },
@@ -406,6 +407,134 @@ export const recordController = {
     } catch (error) {
       console.error("Error fetching teacher submitted records:", error);
       res.status(500).json({ error: "Internal Server Error" });
+    }
+  },
+  getAllTeacherSubmittedRecords: async (req: Request, res: Response) => {
+    try {
+      const date = new Date(req.query.date as string);
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({
+          message: `Date is required and must be a string,
+            received ${date} instead
+            `,
+        });
+      }
+
+      const startOfDay = new Date(new Date(date).setHours(0, 0, 0, 0));
+      const endOfDay = new Date(new Date(date).setHours(23, 59, 59, 999));
+
+      const records = await prisma.record.findMany({
+        where: {
+          submitedAt: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+        },
+        include: {
+          class: true,
+          student: true,
+          teacher: true,
+        },
+      });
+
+      const formattedRecords = records.reduce((acc, record) => {
+        // Skip records where classId is null
+        if (record.classId === null) {
+          return acc;
+        }
+
+        // Ensure the classId exists in the accumulator
+        if (!acc[record.classId]) {
+          acc[record.classId] = {
+            classId: record.classId,
+            date: record.submitedAt.toISOString().split("T")[0],
+            paidStudents: [],
+            unpaidStudents: [],
+            absentStudents: [],
+            submittedBy: record.submitedBy,
+            teacher: {
+              id: record.teacher?.id || 0,
+              name: record.teacher?.name || "",
+            },
+            class: {
+              id: record.class?.id || 0,
+              name: record.class?.name || "",
+            },
+          };
+        }
+
+        const studentRecord = {
+          id: record.payedBy || 0,
+          amount: record.settingsAmount || 0,
+          paidBy: record.payedBy?.toString() || "",
+          hasPaid: record.hasPaid || false,
+          date: record.submitedAt.toISOString().split("T")[0],
+          name: record.student?.name || "",
+          class: record.class?.name || "",
+        };
+
+        if (record.isAbsent) {
+          acc[record.classId]?.absentStudents?.push({
+            ...studentRecord,
+            amount_owing: record.settingsAmount || 0,
+          });
+        } else if (record.hasPaid) {
+          acc[record.classId]?.paidStudents?.push(studentRecord);
+        } else {
+          acc[record.classId]?.unpaidStudents?.push(studentRecord);
+        }
+
+        return acc;
+      }, {} as Record<number, TeacherRecord>);
+      res.json(Object.values(formattedRecords));
+    } catch (error) {
+      console.error("Error fetching teacher records:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+  //Get a single record from a teacher and specific date
+  getSingleTeacherRecordByDate: async (req: Request, res: Response) => {
+    const date = new Date(req.query.date as string);
+    const teacherId = Number(req.params.teacherId);
+
+    // Validate inputs
+    if (!teacherId || isNaN(Number(teacherId))) {
+      return res.status(400).json({ message: "Invalid or missing teacher ID" });
+    }
+    if (isNaN(date.getTime())) {
+      return res.status(400).json({ message: "Invalid date format" });
+    }
+
+    try {
+      // Query the records for the specified teacher and date
+      const records = await prisma.record.findMany({
+        where: {
+          submitedBy: Number(teacherId),
+          submitedAt: {
+            gte: new Date(date.setHours(0, 0, 0, 0)),
+            lte: new Date(date.setHours(23, 59, 59, 999)),
+          },
+        },
+        include: {
+          class: { select: { name: true } },
+          student: { select: { name: true } },
+        },
+      });
+
+      const formattedRecords = records.map((record) => ({
+        id: record.id,
+        submitedAt: record.submitedAt.toISOString(),
+        student: { name: record.student?.name || "Unknown" },
+        class: { name: record.class?.name || "Unknown" },
+        amount: record.amount || 0,
+        hasPaid: record.hasPaid,
+        isAbsent: record.isAbsent,
+      }));
+
+      res.status(200).json(formattedRecords);
+    } catch (error) {
+      console.error("Error fetching teacher record by date:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   },
   update: async (req: Request, res: Response) => {

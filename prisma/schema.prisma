@@ -57,7 +57,7 @@ model Record {
   hasPaid        Boolean  @default(false)
   isAbsent       Boolean  @default(false)
   settingsAmount Int
-  teacher        User     @relation(fields: [submitedBy], references: [id])
+  teacher        User     @relation(fields: [submitedBy], references: [id], onDelete: Cascade)
   student        Student? @relation(fields: [payedBy], references: [id])
   classId        Int?     
   class          Class?   @relation(fields: [classId], references: [id])

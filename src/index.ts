@@ -105,6 +105,24 @@ app.post(
   authenticateToken,
   recordController.generateDailyRecords
 );
+app.get("/records/teachers", authenticateToken, async (req, res, next) => {
+  try {
+    await recordController.getAllTeacherSubmittedRecords(req, res);
+  } catch (error) {
+    next(error);
+  }
+});
+app.get(
+  "/records/:teacherId/detail",
+  authenticateToken,
+  async (req, res, next) => {
+    try {
+      await recordController.getSingleTeacherRecordByDate(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 app.get("/records/:classId", authenticateToken, async (req, res, next) => {
   try {
     await recordController.getStudentRecordsByClassAndDate(req, res);
@@ -132,6 +150,7 @@ app.get(
     }
   }
 );
+
 // Update student status
 app.put("/records/:id/status", authenticateToken, async (req, res, next) => {
   try {

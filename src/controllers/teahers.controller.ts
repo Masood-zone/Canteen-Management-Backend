@@ -251,13 +251,13 @@ export const teacherController = {
   },
 
   deleteTeacher: async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid teacher ID" });
     }
     try {
       const deletedTeacher = await prisma.user.delete({
-        where: { id },
+        where: { id: id },
       });
       if (!deletedTeacher) {
         return res.status(404).json({ message: "Teacher not found" });
